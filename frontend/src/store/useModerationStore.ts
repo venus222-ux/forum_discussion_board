@@ -11,6 +11,10 @@ export interface Flag {
     name: string;
   };
   created_at: string;
+  comment: Comment;
+  ai_hate_label?: string;
+  ai_hate_score?: number;
+  ai_hate_reason?: string;
 }
 
 interface ModerationState {

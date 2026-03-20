@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useModerationStore } from "../../store/useModerationStore";
 import useModerationListener from "../../hooks/useModerationListener";
 import styles from "../../styles/ModerateDashboard.module.css";
@@ -11,7 +11,7 @@ export default function ModerateDashboard() {
 
   useEffect(() => {
     fetchFlags();
-  }, []);
+  }, [fetchFlags]);
 
   if (loading) {
     return <div className={styles.loading}>Loading flags...</div>;
@@ -70,11 +70,9 @@ export default function ModerateDashboard() {
             </button>
 
             <div className={styles.aiInfo}>
-              <strong>AI Hate:</strong> {flag.comment.ai_hate_label}(
-              {Math.round(flag.comment.ai_hate_score * 100)}%)
-              <span className={styles.aiReason}>
-                {flag.comment.ai_hate_reason}
-              </span>
+              <strong>AI Hate:</strong> {flag.ai_hate_label}(
+              {Math.round((flag.ai_hate_score || 0) * 100)}%)
+              <span className={styles.aiReason}>{flag.ai_hate_reason}</span>
             </div>
           </div>
         </div>

@@ -34,23 +34,30 @@ class AuthController extends Controller
     }
 
     // --- LOGIN ---
-    public function login(Request $request) {
-        $credentials = $request->only('email','password');
+public function login(Request $request) {
+    $credentials = $request->only('email','password');
 
-        if (!$token = Auth::guard('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        // Mark user online for 5 min
-        $user = Auth::guard('api')->user();
-        Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
-
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60
-        ]);
+    if (!$token = Auth::guard('api')->attempt($credentials)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
     }
+
+    $user = Auth::guard('api')->user();
+
+    // Mark user online for 5 min
+    Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
+
+    return response()->json([
+        'token' => $token,
+        'token_type' => 'bearer',
+        'expires_in' => auth('api')->factory()->getTTL() * 60,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => strtolower($user->role), // normalize to frontend Role
+        ],
+    ]);
+}
 
     // --- REFRESH JWT token---
 // app/Http/Controllers/AuthController.php

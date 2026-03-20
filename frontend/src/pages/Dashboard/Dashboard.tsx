@@ -1,14 +1,15 @@
+import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 import { useStore } from "../../store/useStore";
 
-import ModeratorDashboard from "./ModeratorDashboard";
-import UserDashboard from "./UserDashboard";
-import AdminDashboard from "./AdminDashboard";
+// Lazy load dashboards
+const ModeratorDashboard = lazy(() => import("./ModeratorDashboard"));
+const UserDashboard = lazy(() => import("./UserDashboard"));
+const AdminDashboard = lazy(() => import("./AdminDashboard"));
 
 export default function Dashboard() {
   const { isAuth, role, user } = useStore();
 
-  // ── DEBUG LOGS (remove after we fix it) ──
   console.log("[Dashboard Debug] →", {
     isAuth,
     role,
@@ -62,16 +63,26 @@ export default function Dashboard() {
     );
   }
 
-  // Normal role switch (unchanged)
-  switch (role.toLowerCase().trim()) {
-    case "moderator":
-      return <ModeratorDashboard />;
-    case "user":
-      return <UserDashboard />;
-    case "admin":
-      return <AdminDashboard />;
-    default:
-      console.warn(`[Dashboard] Unknown role: "${role}"`);
-      return <Navigate to="/" replace />;
-  }
+  // Lazy-load dashboards with Suspense
+  const renderDashboard = () => {
+    switch (role.toLowerCase().trim()) {
+      case "moderator":
+        return <ModeratorDashboard />;
+      case "user":
+        return <UserDashboard />;
+      case "admin":
+        return <AdminDashboard />;
+      default:
+        console.warn(`[Dashboard] Unknown role: "${role}"`);
+        return <Navigate to="/" replace />;
+    }
+  };
+
+  return (
+    <Suspense
+      fallback={<p className="text-center mt-8">Loading dashboard...</p>}
+    >
+      {renderDashboard()}
+    </Suspense>
+  );
 }

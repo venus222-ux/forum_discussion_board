@@ -1,8 +1,7 @@
 // src/pages/ThreadList.tsx
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { useStore } from "../store/useStore";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useThreadStore, Thread } from "../store/useThreadStore";
 import styles from "../styles/ThreadList.module.css";
 import dayjs from "dayjs";
@@ -10,38 +9,23 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 export default function ThreadList() {
-  const { isAuth, user } = useStore();
-
-  // Zustand store
   const threads = useThreadStore((s) => s.threads);
   const lastPage = useThreadStore((s) => s.lastPage);
   const fetchThreads = useThreadStore((s) => s.fetchThreads);
   const setThreads = useThreadStore((s) => s.setThreads);
 
-  // Local state
   const [page, setPage] = useState(1);
 
-  // Fetch threads on page load or page change
-  const { isLoading, isFetching } = useQuery({
+  const { isLoading, isFetching } = useQuery<Thread[]>({
     queryKey: ["threads", page],
     queryFn: async () => {
       await fetchThreads(page);
+      return useThreadStore.getState().threads;
     },
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   });
 
   // Utilities
-  const formatDate = (date?: string) =>
-    date
-      ? new Date(date).toLocaleString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : "Unknown";
-
   const timeAgo = (date?: string) => (date ? dayjs(date).fromNow() : "unknown");
 
   // Pagination handlers
@@ -51,7 +35,7 @@ export default function ThreadList() {
   // Reset threads when component unmounts
   useEffect(() => {
     return () => setThreads([]);
-  }, []);
+  }, [setThreads]);
 
   return (
     <div className={styles.container}>
@@ -89,7 +73,8 @@ export default function ThreadList() {
                   </div>
                   <div className={styles.metaStats}>
                     <span>📅 {timeAgo(thread.created_at)}</span>
-                    {thread.views !== undefined && (
+                    {/* Only render views if they exist */}
+                    {"views" in thread && thread.views !== undefined && (
                       <span>👁️ {thread.views} views</span>
                     )}
                     {Array.isArray(thread.replies) && (

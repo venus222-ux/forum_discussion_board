@@ -6,7 +6,7 @@ import styles from "../styles/Navbar.module.css";
 import echo from "../echo";
 
 export default function Navbar() {
-  const { isAuth, user, role, theme, toggleTheme, setIsAuth } = useStore();
+  const { isAuth, user, theme, toggleTheme, setIsAuth } = useStore();
   const navigate = useNavigate();
 
   const {
@@ -21,8 +21,8 @@ export default function Navbar() {
   } = useNotificationStore();
 
   const [scrolled, setScrolled] = useState(false);
-  const [score, setScore] = useState(user?.reputation || 0);
-  const [scoreHighlight, setScoreHighlight] = useState(false);
+  const [score] = useState(user?.reputation || 0);
+  const [scoreHighlight] = useState(false);
 
   // ------------------- Scroll effect -------------------
   useEffect(() => {

@@ -12,11 +12,16 @@ dayjs.extend(relativeTime);
 import { useQuery } from "@tanstack/react-query";
 import API from "../api";
 
+// --- TYPES ---
 interface ActiveUser {
   id: number;
   name: string;
   postCount: number;
   reputation: number;
+}
+
+interface ActiveUserWithPoints extends ActiveUser {
+  points: number;
 }
 
 interface Category {
@@ -27,9 +32,10 @@ interface Category {
   threads_count?: number;
 }
 
-const Home = () => {
+// --- COMPONENT ---
+const Home: React.FC = () => {
   const { isAuth } = useStore();
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<
     "conversations" | "help" | "categories"
   >("conversations");
@@ -43,16 +49,15 @@ const Home = () => {
     isSearching,
   } = useThreadStore();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState<string>(searchQuery);
 
   // --- DEBOUNCE SEARCH ---
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
       setPage(1);
-    }, 500); // 500ms debounce
-
+    }, 500);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -65,7 +70,7 @@ const Home = () => {
         fetchThreads(page);
       }
     }
-  }, [page, activeTab, debouncedQuery]);
+  }, [page, activeTab, debouncedQuery, fetchSearch, fetchThreads]);
 
   // Reset search when switching tabs
   useEffect(() => {
@@ -76,10 +81,10 @@ const Home = () => {
     } else {
       setThreads([]);
     }
-  }, [activeTab]);
+  }, [activeTab, setThreads]);
 
   // --- ACTIVE USERS QUERY ---
-  const { data: usersData } = useQuery({
+  const { data: usersData } = useQuery<ActiveUser[]>({
     queryKey: ["activeUsers"],
     queryFn: async () => {
       const res = await API.get("/users/most-active");
@@ -94,21 +99,20 @@ const Home = () => {
   });
 
   // --- SORT USERS BY POINTS (postCount + reputation) ---
-  interface ActiveUserWithPoints extends ActiveUser {
-    points: number;
-  }
-
   const activeUsersWithPoints: ActiveUserWithPoints[] = useMemo(() => {
     return (usersData || [])
-      .map((user) => ({
+      .map((user: ActiveUser) => ({
         ...user,
         points: (user.postCount ?? 0) + (user.reputation ?? 0),
       }))
-      .sort((a, b) => b.points - a.points);
+      .sort(
+        (a: ActiveUserWithPoints, b: ActiveUserWithPoints) =>
+          b.points - a.points,
+      );
   }, [usersData]);
 
   // --- CATEGORIES QUERY ---
-  const { data: categoriesData } = useQuery({
+  const { data: categoriesData } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
       const res = await API.get("/categories");
@@ -131,6 +135,7 @@ const Home = () => {
 
   const timeAgo = (date: string) => (date ? dayjs(date).fromNow() : "unknown");
 
+  // --- RENDER ---
   return (
     <div className={styles.container}>
       {/* HEADER */}
@@ -138,9 +143,7 @@ const Home = () => {
         <h1 className={styles.logo}># Typeforum</h1>
         <div className={styles.tabs}>
           <button
-            className={`${styles.tab} ${
-              activeTab === "conversations" ? styles.activeTab : ""
-            }`}
+            className={`${styles.tab} ${activeTab === "conversations" ? styles.activeTab : ""}`}
             onClick={() => {
               setActiveTab("conversations");
               setPage(1);
@@ -150,9 +153,7 @@ const Home = () => {
             Conversations
           </button>
           <button
-            className={`${styles.tab} ${
-              activeTab === "categories" ? styles.activeTab : ""
-            }`}
+            className={`${styles.tab} ${activeTab === "categories" ? styles.activeTab : ""}`}
             onClick={() => setActiveTab("categories")}
           >
             Categories
@@ -198,7 +199,7 @@ const Home = () => {
                     )}
                   </div>
                 ) : (
-                  threads.map((thread: Thread, index) => (
+                  threads.map((thread: Thread, index: number) => (
                     <Link
                       key={`${thread.id}-${thread.slug}-${index}`}
                       to={`/threads/${thread.slug}`}
@@ -206,16 +207,18 @@ const Home = () => {
                     >
                       <article className={styles.threadCard}>
                         <div className={styles.avatar}>
-                          <span>{getUserInitials(thread.user?.name)}</span>
+                          <span>
+                            {getUserInitials(thread.user?.name ?? "")}
+                          </span>
                         </div>
                         <div className={styles.threadContent}>
                           <div className={styles.threadMeta}>
                             <span className={styles.author}>
-                              {thread.user?.name}
+                              {thread.user?.name ?? "Unknown"}
                             </span>
                             <span className={styles.separator}>·</span>
                             <span className={styles.category}>
-                              {thread.category?.name}
+                              {thread.category?.name ?? "Uncategorized"}
                             </span>
                           </div>
                           <h2 className={styles.threadTitle}>{thread.title}</h2>
@@ -322,7 +325,7 @@ const Home = () => {
                     </div>
                   </div>
                 ))
-              : activeUsersWithPoints.map((user) => (
+              : activeUsersWithPoints.map((user: ActiveUserWithPoints) => (
                   <div key={user.id} className={styles.userItem}>
                     <div className={styles.userAvatar}>
                       <span>{getUserInitials(user.name)}</span>

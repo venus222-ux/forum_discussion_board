@@ -1,5 +1,5 @@
 // src/components/CommentTree.tsx
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Reply, useThreadStore } from "../store/useThreadStore";
 import { useStore } from "../store/useStore";
 import styles from "../styles/CommentTree.module.css";
@@ -8,6 +8,7 @@ interface CommentTreeProps {
   comment: Reply;
   level?: number;
   threadSlug?: string;
+  onAcceptBest?: (commentId: string) => void;
 }
 
 export default function CommentTree({
@@ -358,6 +359,7 @@ export default function CommentTree({
             comment={child}
             level={level + 1}
             threadSlug={threadSlug}
+            onAcceptBest={handleAcceptBest}
           />
         ))}
       </div>

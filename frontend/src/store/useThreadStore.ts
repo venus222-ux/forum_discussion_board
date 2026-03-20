@@ -37,6 +37,7 @@ export interface Thread {
   replies?: Reply[];
   best_comment_id?: string;
   optimistic?: boolean;
+  views?: number;
 }
 
 interface ThreadStore {

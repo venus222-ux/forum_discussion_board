@@ -17,8 +17,15 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: "", content: "", category_id: "" });
-
+  const [form, setForm] = useState<{
+    title: string;
+    content: string;
+    category_id: number;
+  }>({
+    title: "",
+    content: "",
+    category_id: 0, // numeric default
+  });
   const {
     threads,
     hasMore,
@@ -92,13 +99,14 @@ export default function UserDashboard() {
   const openModal = () => {
     setModalOpen(true);
     setEditingSlug(null);
-    setForm({ title: "", content: "", category_id: "" });
+    // When clearing the form
+    setForm({ title: "", content: "", category_id: 0 });
   };
 
   const closeModal = () => {
     setModalOpen(false);
     setEditingSlug(null);
-    setForm({ title: "", content: "", category_id: "" });
+    setForm({ title: "", content: "", category_id: 0 }); // ✅ number
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,14 +237,11 @@ export default function UserDashboard() {
                     Category
                   </label>
                   <select
-                    id="category"
-                    name="category_id"
-                    className={styles.select}
                     value={form.category_id}
-                    onChange={handleChange}
-                    required
+                    onChange={(e) =>
+                      setForm({ ...form, category_id: Number(e.target.value) })
+                    }
                   >
-                    <option value="">Select a category</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -262,7 +267,6 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Thread List */}
       {/* Thread List */}
       <div className={styles.threadList}>
         {threads.length === 0 ? (

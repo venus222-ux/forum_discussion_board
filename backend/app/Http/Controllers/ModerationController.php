@@ -134,15 +134,20 @@ class ModerationController extends Controller
     /**
      * List pending flags
      */
-    public function listFlags()
-    {
+   public function listFlags()
+{
+    try {
         $flags = CommentFlag::where('status', 'pending')
             ->with(['user', 'comment'])
             ->latest()
             ->get();
 
         return response()->json($flags);
+    } catch (\Throwable $e) {
+        \Log::error("Moderation listFlags failed: ".$e->getMessage());
+        return response()->json(['message' => 'Internal server error'], 500);
     }
+}
 
     /**
      * Approve a flag → hide comment

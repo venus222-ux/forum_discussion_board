@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Bar, Pie } from "react-chartjs-2";
+import { fetchDashboard } from "../../echo";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -11,7 +12,6 @@ import {
   ArcElement,
 } from "chart.js";
 
-import echo, { fetchDashboard } from "../../echo"; // your echo + fetchDashboard file
 import styles from "../../styles/AdminDashboard.module.css";
 import AdminCategories from "../../components/AdminCategories";
 
@@ -38,10 +38,9 @@ interface DashboardData {
 
 const AdminDashboard: React.FC = () => {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-
   useEffect(() => {
     const loadDashboard = async () => {
-      const data = await fetchDashboard("30d");
+      const data = await fetchDashboard("30d"); // call fetchDashboard, not setDashboard
       if (data) setDashboard(data);
     };
     loadDashboard();

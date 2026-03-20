@@ -5,10 +5,11 @@ import { refreshToken } from "../api";
 type Role = "user" | "moderator" | "admin" | null;
 
 interface User {
-  id: number | string;
+  id: number;
   name: string;
   email?: string;
   role?: Role | string;
+  reputation?: number;
 }
 
 interface AppState {

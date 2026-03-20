@@ -1,11 +1,18 @@
 // src/pages/ThreadDetail.tsx
-import { useState, useEffect, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  lazy,
+  Suspense,
+} from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "../store/useStore";
 import { useThreadStore, Reply } from "../store/useThreadStore";
 import styles from "../styles/ThreadDetail.module.css";
-import CommentTree from "../components/CommentTree";
+const CommentTree = lazy(() => import("../components/CommentTree"));
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 import dayjs from "dayjs";
@@ -16,7 +23,7 @@ dayjs.extend(relativeTime);
 
 export default function ThreadDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const { isAuth, user } = useStore();
+  const { isAuth } = useStore(); // removed unused 'user'
   const navigate = useNavigate();
 
   // Zustand store
@@ -29,7 +36,6 @@ export default function ThreadDetail() {
   const [replyContent, setReplyContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Persist active tab in localStorage
   const [activeTab, setActiveTab] = useState<"discussion" | "details">(
     () =>
       (localStorage.getItem("activeTab") as "discussion" | "details") ||
@@ -58,8 +64,7 @@ export default function ThreadDetail() {
       if (!slug) return [];
       const res = await fetch(`/api/threads/${slug}/comments`);
       if (!res.ok) throw new Error("Failed to fetch comments");
-      const data: Reply[] = await res.json();
-      return data;
+      return await res.json();
     },
     enabled: !!slug,
   });
@@ -67,71 +72,52 @@ export default function ThreadDetail() {
   // ---------------- ENRICH REPLIES ----------------
   const prevBestId = useRef<string | undefined>();
 
-  const enrichReplies = (replies: Reply[], bestId?: string): Reply[] =>
-    replies.map((r) => ({
-      ...r,
-      isBest: r._id === bestId,
-      children: r.children ? enrichReplies(r.children, bestId) : undefined,
-    }));
+  const enrichReplies = useCallback(
+    (replies: Reply[], bestId?: string): Reply[] => {
+      return replies.map((r) => ({
+        ...r,
+        isBest: r._id === bestId,
+        children: r.children ? enrichReplies(r.children, bestId) : undefined,
+      }));
+    },
+    [],
+  );
 
   useEffect(() => {
-    if (!currentThread || !fetchedReplies) return;
+    if (!currentThread) return;
 
-    // Only update if best_comment_id changed or replies array changed
-    const currentRepliesIds = (currentThread.replies || [])
-      .map((r) => r._id)
-      .join(",");
+    const currentReplies = currentThread.replies || [];
+    const bestCommentId = currentThread.best_comment_id;
+
+    const currentRepliesIds = currentReplies.map((r) => r._id).join(",");
     const fetchedRepliesIds = fetchedReplies.map((r) => r._id).join(",");
 
     if (
-      prevBestId.current === currentThread.best_comment_id &&
+      prevBestId.current === bestCommentId &&
       currentRepliesIds === fetchedRepliesIds
-    )
-      return;
-
-    prevBestId.current = currentThread.best_comment_id;
-
-    const enriched = enrichReplies(
-      fetchedReplies,
-      currentThread.best_comment_id,
-    );
-    setReplies(slug!, enriched);
-  }, [
-    currentThread?.best_comment_id,
-    fetchedReplies,
-    slug,
-    setReplies,
-    currentThread?.replies,
-  ]);
-
-  // ---------------- REAL-TIME LISTENERS ----------------
-  useEffect(() => {
-    if (!slug) return;
-
-    // Use global Echo instance
-    const echo = (window as any).Echo;
-    if (!echo) {
-      console.error("Laravel Echo not initialized");
+    ) {
       return;
     }
 
+    prevBestId.current = bestCommentId;
+
+    const enriched = enrichReplies(fetchedReplies, bestCommentId);
+    if (slug) setReplies(slug, enriched);
+  }, [currentThread, fetchedReplies, slug, setReplies, enrichReplies]);
+  // ---------------- REAL-TIME LISTENERS ----------------
+  useEffect(() => {
+    if (!slug) return;
+    const echo = (window as any).Echo;
+    if (!echo) return;
+
     const channel = echo.channel(`thread.comments.${slug}`);
 
-    channel.listen(
-      "CommentFlagged",
-      (e: { commentId: string; total_flags: number }) => {
-        // Refetch replies to update flags and possible hides
-        refetchReplies();
-      },
-    );
-
-    channel.listen(
-      "CommentModerated",
-      (e: { commentId: string; is_hidden: boolean; reason: string }) => {
-        // Refetch replies to reflect moderation changes
-        refetchReplies();
-      },
-    );
+    channel.listen("CommentFlagged", () => {
+      refetchReplies();
+    });
+    channel.listen("CommentModerated", () => {
+      refetchReplies();
+    });
 
     return () => {
       channel.stopListening("CommentFlagged");
@@ -178,31 +164,29 @@ export default function ThreadDetail() {
   };
 
   // ---------------- ACCEPT BEST COMMENT ----------------
-  const handleAcceptBest = async (commentId: string) => {
-    if (!slug || !commentId) return;
-    try {
-      const res = await fetch(`/api/comments/${commentId}/accept`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (!res.ok) throw new Error("Failed to accept comment");
+  // const handleAcceptBest = async (commentId: string) => {
+  //   if (!slug || !commentId) return;
+  //   try {
+  //     const res = await fetch(`/api/comments/${commentId}/accept`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //       },
+  //     });
+  //     if (!res.ok) throw new Error("Failed to accept comment");
 
-      // Update replies locally
-      const updated = enrichReplies(fetchedReplies, commentId);
-      setReplies(slug, updated);
+  //     const updated = enrichReplies(fetchedReplies, commentId);
+  //     setReplies(slug, updated);
 
-      // Update currentThread state to persist best_comment_id
-      useThreadStore.getState().setCurrentThread({
-        ...currentThread!,
-        best_comment_id: commentId,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  //     useThreadStore.getState().setCurrentThread({
+  //       ...currentThread!,
+  //       best_comment_id: commentId,
+  //     });
+  //   } catch (err) {
+  //     console.error(err);
+  //   }
+  // };
 
   // ---------------- UTILITIES ----------------
   const getUserInitials = (name?: string) =>
@@ -242,7 +226,6 @@ export default function ThreadDetail() {
 
   const thread = currentThread;
 
-  // ---------------- JSX ----------------
   return (
     <div className={styles.container}>
       {/* Back navigation & breadcrumbs */}
@@ -373,14 +356,19 @@ export default function ThreadDetail() {
               </Link>
             </div>
           )}
-
           <div className={styles.repliesList}>
             {loadingReplies ? (
               <p>Loading replies...</p>
             ) : (
               (thread.replies || []).map((c) => (
                 <div key={c._id} className={c.isBest ? styles.bestComment : ""}>
-                  <CommentTree comment={c} level={0} threadSlug={slug || ""} />
+                  <Suspense fallback={<p>Loading comment...</p>}>
+                    <CommentTree
+                      comment={c}
+                      level={0}
+                      threadSlug={slug || ""}
+                    />
+                  </Suspense>
                 </div>
               ))
             )}

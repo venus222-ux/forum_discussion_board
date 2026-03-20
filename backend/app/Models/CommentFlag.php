@@ -13,11 +13,16 @@ class CommentFlag extends Model
         'status', // optional: pending, approved, rejected
     ];
 
-    // optional: default table name if you want
     protected $table = 'comment_flags';
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // ← Add this
+    public function comment()
+    {
+        return $this->belongsTo(Comment::class, 'comment_id');
     }
 }
