@@ -1,17 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useEffect } from "react";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-const Profile = lazy(() => import("./pages/Profile"));
-const Home = lazy(() => import("./pages/Home"));
-import ForgotPassword from "./pages/ForgetPassword";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
 import Navbar from "./components/Navbar";
 import { ToastContainer } from "react-toastify";
 import { useStore } from "./store/useStore";
-import CategoryList from "./pages/CategoryList";
-import ThreadList from "./pages/ThreadList";
+
+// Lazy-loaded pages
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Home = lazy(() => import("./pages/Home"));
+const ForgotPassword = lazy(() => import("./pages/ForgetPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const CategoryList = lazy(() => import("./pages/CategoryList"));
+const ThreadList = lazy(() => import("./pages/ThreadList"));
 const ThreadDetail = lazy(() => import("./pages/ThreadDetail"));
 const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
 
