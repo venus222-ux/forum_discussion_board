@@ -1,30 +1,3 @@
-Forum_discussion_board\
-├── backend/ # Laravel 12 API
-└── frontend/ # React + Vite + TS SPA
-
-✅ 2. Set Up Laravel Backend
-cd backend
-cp .env.example .env
-composer install
-php artisan key:generate
-php artisan migrate
-php artisan db:seed
-php artisan serve
-
-php artisan jwt:secret
-php artisan config:clear
-php artisan config:cache
-
-✅ 3. Set Up React Frontend
-cd ../frontend
-cp .env.example .env
-npm install
-npm run dev
-
-✅ 4. Run in the root project:
-npm run dev
-docker-compose up -d
-
 1. Product Vision
    A scalable, production-ready discussion platform inspired by Reddit and StackOverflow. Designed with a modern full-stack architecture focused on performance, real-time interaction, and horizontal scalability.
 

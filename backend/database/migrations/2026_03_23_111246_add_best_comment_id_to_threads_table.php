@@ -12,14 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('threads', function (Blueprint $table) {
-            $table->unsignedBigInteger('best_comment_id')->nullable();
-
-         $table->foreign('best_comment_id')
-           ->references('id')
-           ->on('comments')
-           ->nullOnDelete();
-            
-        });
+        $table->string('best_comment_id')->nullable();      });
     }
 
     /**
@@ -27,8 +20,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('threads', function (Blueprint $table) {
-            $table->dropColumn('best_comment_id');
-        });
+       Schema::table('threads', function (Blueprint $table) {
+    $table->dropColumn('best_comment_id');
+});
     }
 };
