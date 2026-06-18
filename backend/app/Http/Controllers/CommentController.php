@@ -325,14 +325,15 @@ public function store(Request $request, $slug)
         }
 
         // ---------- Notification for likes ----------
-        if ($action === 'added' && $data['type'] === 'upvote') {
-            $author = User::find($commentAuthorId);
-            if ($author && $author->id !== $userId) {
-                $actor = $user;
-                $author->notify(new CommentLiked($comment, $actor, $actor));
-            }
-        }
+       if ($action === 'added' && $data['type'] === 'upvote') {
+           $author = User::find($commentAuthorId);
 
+       if ($author && $author->id !== $userId) {
+          $author->notify(
+              new CommentLiked($comment, $user)
+          );
+        }
+       }
         return response()->json(['message' => 'Vote ' . $action, 'action' => $action]);
     }
 

@@ -1,5 +1,5 @@
 // src/components/CommentTree.tsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Reply, useThreadStore } from "../store/useThreadStore";
 import { useStore } from "../store/useStore";
 import styles from "../styles/CommentTree.module.css";
@@ -10,6 +10,7 @@ interface CommentTreeProps {
   threadSlug?: string;
   onAcceptBest?: (commentId: string) => void;
 }
+
 
 export default function CommentTree({
   comment,
@@ -202,6 +203,8 @@ export default function CommentTree({
       setFlagSubmitting(false);
     }
   };
+
+ 
 
   return (
     <div className={styles.commentWrapper} style={{ marginLeft: level * 24 }}>
