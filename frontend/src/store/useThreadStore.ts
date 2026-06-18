@@ -138,7 +138,23 @@ export const useThreadStore = create<ThreadStore>((set, get) => ({
       set({ error: err, isLoading: false });
     }
   },
+fetchThreadsByCategory: async (slug: string, page = 1) => {
+  set({ isLoading: true, error: null });
 
+  try {
+    const res = await API.get(
+      `/categories/${slug}/threads?page=${page}`
+    );
+
+    set({
+      threads: res.data.data,
+      lastPage: res.data.last_page,
+      isLoading: false,
+    });
+  } catch (err) {
+    set({ error: err, isLoading: false });
+  }
+},
   fetchThreadBySlug: async (slug) => {
     if (!slug) return;
 

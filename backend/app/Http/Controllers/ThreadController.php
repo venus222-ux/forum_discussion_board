@@ -2,6 +2,7 @@
 // app/Http/Controllers/ThreadController.php
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Thread;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -10,13 +11,22 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class ThreadController extends Controller
 {
     // List threads in category by category slug
-    public function index($categorySlug) {
-        $category = \App\Models\Category::where('slug', $categorySlug)->firstOrFail();
+  public function index($categorySlug)
+{
+    $category = Category::where('slug', $categorySlug)->firstOrFail();
 
-        return Thread::where('category_id', $category->id)
-            ->with('user')
-            ->paginate(10);
-    }
+    $threads = Thread::with(['user:id,name', 'category:id,name,slug'])
+        ->where('category_id', $category->id)
+        ->latest()
+        ->paginate(10);
+
+    return response()->json([
+        'data' => $threads->items(),
+        'current_page' => $threads->currentPage(),
+        'last_page' => $threads->lastPage(),
+        'total' => $threads->total(),
+    ]);
+}
 
     // List recent threads
     public function recent(Request $request) {
