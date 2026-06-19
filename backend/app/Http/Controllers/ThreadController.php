@@ -7,6 +7,7 @@ use App\Models\Thread;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
 
 class ThreadController extends Controller
 {
@@ -62,17 +63,29 @@ class ThreadController extends Controller
             ->get();
     }
 
-    // Show single thread by slug
-    public function show($slug) {
-        $thread = Thread::with(['user:id,name', 'category:id,name,slug'])
-            ->where('slug', $slug)
-            ->firstOrFail();
+public function show($slug)
+{
+    $thread = Thread::with(['user:id,name', 'category:id,name,slug'])
+        ->where('slug', $slug)
+        ->firstOrFail();
 
-        // Fetch MongoDB comments safely
-        $thread->replies = $thread->fetchComments();
+    // Unique view key
+    $key = 'thread_view_' . $thread->id . '_' . request()->ip();
 
-        return response()->json($thread);
+    if (!Cache::has($key)) {
+        $thread->increment('views');
+
+        // prevent recount for 24h
+        Cache::put($key, true, now()->addHours(24));
+
+        // refresh value
+        $thread->refresh();
     }
+
+    $thread->replies = $thread->fetchComments();
+
+    return response()->json($thread);
+}
 
     // Create thread — authenticated user only
     public function store(Request $request) {

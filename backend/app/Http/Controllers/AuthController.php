@@ -46,7 +46,7 @@ public function login(Request $request) {
     // Mark user online for 5 min
     Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
 
-    return response()->json([
+    return response()->json([ 
         'token' => $token,
         'token_type' => 'bearer',
         'expires_in' => auth('api')->factory()->getTTL() * 60,
