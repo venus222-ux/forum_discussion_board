@@ -183,9 +183,11 @@ export default function ThreadDetail() {
           <div className={styles.authorName}>
             {thread.user?.name}
           </div>
-          {thread.user?.badge && (
-            <span className={styles.authorBadge}>{thread.user.badge}</span>
-          )}
+         {thread.user?.name && (
+            <span className={styles.authorBadge}>
+            Member
+           </span>
+         )}
         </div>
       </div>
 

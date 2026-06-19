@@ -4,7 +4,7 @@ import type { Reply } from "./reply";
 
 export interface Thread {
   id: number;
-  title: string;
+  title: string; 
   slug: string;
   content: string;
 

@@ -3,49 +3,36 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Actions\Notifications\ListNotificationsAction;
+use App\Actions\Notifications\MarkNotificationReadAction;
+use App\Actions\Notifications\ClearNotificationsAction;
 
 class NotificationController extends Controller
 {
- public function index(Request $request)
-{
-    $user = auth('api')->user(); // JWT guard
+    public function __construct(
+        private ListNotificationsAction $listAction,
+        private MarkNotificationReadAction $markReadAction,
+        private ClearNotificationsAction $clearAction
+    ) {}
 
-    // Fetch latest notifications (read + unread)
-    $notifications = $user->notifications()
-        ->latest()
-        ->cursorPaginate(10);
-
-    return response()->json([
-        'data' => $notifications->items(),
-        'next_cursor' => optional($notifications->nextCursor())->encode(),
-        'unread_count' => $user->unreadNotifications()->count(),
-    ]);
-}
-    public function markAsRead($id)
+    public function index(Request $request)
     {
-        $user = auth('api')->user(); //Use 'api' guard
-        $notification = $user->notifications()->findOrFail($id);
-        $notification->markAsRead();
-        return response()->json(['success'=>true]);
-
+        return response()->json(
+            $this->listAction->execute(auth('api')->user())
+        );
     }
 
-   public function clear(Request $request)
- {
-    $user = auth('api')->user(); //Use 'api' guard
-    //Mark all unread notifications as read
-    $user->unreadNotifications->each(function ($n){
-        $n->markAsRead();
-    });
+    public function markAsRead($id)
+    {
+        return response()->json(
+            $this->markReadAction->execute($id, auth('api')->user())
+        );
+    }
 
-    //Return latest notifications (read + unread)
-    $notifications = $user->notifications()->latest()->take(10)->get();
-    $user->notifications()->delete(); // Deletes all (read + unread)
-    return response()->json([
-        'status' => 'ok',
-        'data' => $notifications,
-        'unread_count' => 0,
-    ]);
-
- }
+    public function clear(Request $request)
+    {
+        return response()->json(
+            $this->clearAction->execute(auth('api')->user())
+        );
+    }
 }
