@@ -1,14 +1,11 @@
 // src/pages/Dashboard/UserDashboard.tsx
 import { useEffect, useRef, useState } from "react";
 import API from "../../api";
-import { useThreadStore, Thread } from "../../store/useThreadStore";
+import { useThreadStore } from "../../store/useThreadStore";
 import Editor from "../../components/Editor";
 import styles from "../../styles/Dashboard.module.css";
 
-interface Category {
-  id: number;
-  name: string;
-}
+import type { Thread, Category } from "@/types";
 
 export default function UserDashboard() {
   const loaderRef = useRef<HTMLDivElement>(null);

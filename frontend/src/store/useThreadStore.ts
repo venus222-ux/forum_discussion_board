@@ -1,44 +1,7 @@
 // src/store/useThreadStore.ts
 import { create } from "zustand";
 import API from "../api";
-
-// -------------------- TYPES --------------------
-
-export interface Reply {
-  _id: string;
-  content: string;
-  user: { id?: number | string; name: string };
-  createdAt: string;
-  upvotes?: number;
-  downvotes?: number;
-  isBest?: boolean;
-  parentId?: string;
-  children?: Reply[];
-  is_hidden?: boolean;
-  official_reply?: boolean;
-  moderation_reason?: string;
-  total_flags?: number;
-}
-
-export interface Thread {
-  id: number;
-  title: string;
-  slug: string;
-  content: string;
-  category_id: number;
-  created_at: string;
-  user?: { id: number | string; name: string; reputation?: number };
-  category?: { id: string; name: string; slug: string };
-  reply_count?: number;
-  like_count?: number;
-  comment_count?: number;
-  upvotes?: number;
-  downvotes?: number;
-  replies?: Reply[];
-  best_comment_id?: string;
-  optimistic?: boolean;
-  views?: number;
-}
+import type { Thread, Reply } from "@/types";
 
 interface ThreadStore {
   threads: Thread[];

@@ -1,14 +1,8 @@
 import { create } from "zustand";
 import API from "../api";
-import { toast } from "react-toastify"; // optional for UI feedback
+import { toast } from "react-toastify";
 
-export interface NotificationItem {
-  id: string;
-  type: string;
-  read_at: string | null;
-  created_at: string;
-  data: any;
-}
+import type { NotificationItem, NotificationResponse } from "@/types";
 
 interface NotificationStore {
   notifications: NotificationItem[];
@@ -33,22 +27,27 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   fetchNotifications: async (cursor = null) => {
     if (get().isLoading || !get().hasMore) return;
+
     set({ isLoading: true });
 
     try {
-      const res = await API.get("/notifications", { params: { cursor } });
+      const res = await API.get<NotificationResponse>("/notifications", {
+        params: { cursor },
+      });
+
       const { data, next_cursor, unread_count } = res.data;
 
-      // filter duplicates
       const existingIds = new Set(get().notifications.map((n) => n.id));
+
       const newNotifications = data.filter(
-        (n: NotificationItem) => !existingIds.has(n.id),
+        (n) => !existingIds.has(n.id)
       );
 
       set({
         notifications: cursor
           ? [...get().notifications, ...newNotifications]
           : newNotifications,
+
         cursor: next_cursor,
         hasMore: Boolean(next_cursor),
         unreadCount: unread_count,
@@ -61,7 +60,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
     }
   },
 
-  addRealtimeNotification: (notification: NotificationItem) => {
+  addRealtimeNotification: (notification) => {
     const exists = get().notifications.some((n) => n.id === notification.id);
     if (exists) return;
 
@@ -74,28 +73,31 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   markAsRead: async (id) => {
     try {
       await API.post(`/notifications/${id}/read`);
+
       set({
         notifications: get().notifications.filter((n) => n.id !== id),
         unreadCount: Math.max(0, get().unreadCount - 1),
       });
     } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+      console.error(err);
       toast.error("Failed to mark notification as read");
     }
   },
 
   clearAll: async () => {
     try {
-      const res = await API.post("/notifications/clear");
+      const res = await API.post<NotificationResponse & { unread_count: number }>(
+        "/notifications/clear"
+      );
+
       set({
-        notifications: res.data.data.map((n: NotificationItem) => ({
-          ...n,
-          read_at: n.read_at ?? new Date().toISOString(),
-        })),
+        notifications: [],
         unreadCount: res.data.unread_count,
+        cursor: null,
+        hasMore: false,
       });
     } catch (err) {
-      console.error("Failed to clear notifications:", err);
+      console.error(err);
       toast.error("Failed to clear notifications");
     }
   },

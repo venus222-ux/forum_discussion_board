@@ -1,26 +1,16 @@
-// src/store/useStore.ts
 import { create } from "zustand";
 import { refreshToken } from "../api";
 
-type Role = "user" | "moderator" | "admin" | null;
-
-interface User {
-  id: number;
-  name: string;
-  email?: string;
-  role?: Role | string;
-  reputation?: number;
-}
+import type { User, Role } from "@/types";
 
 interface AppState {
   isAuth: boolean;
   token: string | null;
-  role: Role;
+  role: Role | null;
   user: User | null;
 
   theme: "light" | "dark";
 
-  // Auth helpers
   setAuth: (token: string, role: Role | undefined, user: User) => void;
   logout: () => void;
   setUser: (user: User | null) => void;
@@ -34,64 +24,60 @@ interface AppState {
 
 let refreshInterval: ReturnType<typeof setInterval> | null = null;
 
+// ---------------- ROLE GUARD ----------------
+const isRole = (value: any): value is Role => {
+  return value === "user" || value === "moderator" || value === "admin";
+};
+
 export const useStore = create<AppState>((set, get) => {
-  // ==================== INITIAL STATE (with role fallback) ====================
   const savedToken = localStorage.getItem("token");
+
   let savedUser: User | null = null;
   try {
-    const savedUserStr = localStorage.getItem("user");
-    savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-  } catch (e) {
-    console.warn("Failed to parse saved user from localStorage");
+    const raw = localStorage.getItem("user");
+    savedUser = raw ? JSON.parse(raw) : null;
+  } catch {
+    savedUser = null;
   }
 
-  const savedRoleStr = localStorage.getItem("role");
-  const initialRole: Role =
-    (savedRoleStr as Role) ||
-    null ||
-    (savedUser?.role
-      ? (String(savedUser.role).toLowerCase().trim() as Role)
-      : null) ||
-    null;
+  const rawSavedRole = localStorage.getItem("role");
+  const savedRole: Role | null = isRole(rawSavedRole) ? rawSavedRole : null;
 
   return {
-    // ------------------- INITIAL STATE -------------------
     isAuth: !!savedToken,
     token: savedToken,
-    role: initialRole,
+    role: savedRole,
     user: savedUser,
 
-    theme: (localStorage.getItem("theme") as "light" | "dark") || "light",
+    theme:
+      (localStorage.getItem("theme") as "light" | "dark") || "light",
 
-    // ------------------- SET AUTH (main fix) -------------------
+    // ---------------- AUTH ----------------
     setAuth: (token, roleParam, user) => {
-      // Normalize role + fallback to user.role if param is missing/undefined
-      const normalizedRole: Role = roleParam
-        ? (roleParam.toLowerCase().trim() as Role)
-        : user?.role
-          ? (String(user.role).toLowerCase().trim() as Role)
-          : null;
+      const rawRole = roleParam ?? user?.role ?? null;
+      const normalizedRole: Role | null = isRole(rawRole)
+        ? rawRole
+        : null;
 
       localStorage.setItem("token", token);
+
       if (normalizedRole) {
         localStorage.setItem("role", normalizedRole);
       } else {
         localStorage.removeItem("role");
       }
 
-      if (user && user.id) {
-        localStorage.setItem("user", JSON.stringify(user));
-      }
+      localStorage.setItem("user", JSON.stringify(user));
 
       set({
         isAuth: true,
         token,
         role: normalizedRole,
-        user: user && user.id ? user : null,
+        user,
       });
     },
 
-    // ------------------- LOGOUT -------------------
+    // ---------------- LOGOUT ----------------
     logout: () => {
       localStorage.removeItem("token");
       localStorage.removeItem("role");
@@ -110,16 +96,14 @@ export const useStore = create<AppState>((set, get) => {
       });
     },
 
-    // ------------------- SET USER (now syncs role) -------------------
-    setUser: (newUser) => {
-      let newRole: Role = null;
-      if (newUser) {
-        newRole = newUser.role
-          ? (String(newUser.role).toLowerCase().trim() as Role)
-          : null;
+    // ---------------- USER UPDATE ----------------
+    setUser: (user) => {
+      const rawRole = user?.role;
+      const role: Role | null = isRole(rawRole) ? rawRole : null;
 
-        localStorage.setItem("user", JSON.stringify(newUser));
-        if (newRole) localStorage.setItem("role", newRole);
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        if (role) localStorage.setItem("role", role);
         else localStorage.removeItem("role");
       } else {
         localStorage.removeItem("user");
@@ -127,21 +111,24 @@ export const useStore = create<AppState>((set, get) => {
       }
 
       set({
-        user: newUser,
-        role: newRole,
+        user,
+        role,
       });
     },
 
-    // ------------------- OTHER HELPERS (unchanged) -------------------
+    // ---------------- AUTH HELPERS ----------------
     setIsAuth: (auth, token) => {
       if (auth && token) {
         localStorage.setItem("token", token);
         set({ isAuth: true, token });
       } else {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user");
-        set({ isAuth: false, token: null, role: null, user: null });
+        localStorage.clear();
+        set({
+          isAuth: false,
+          token: null,
+          role: null,
+          user: null,
+        });
       }
     },
 
@@ -150,44 +137,49 @@ export const useStore = create<AppState>((set, get) => {
         localStorage.setItem("token", token);
         set({ token });
       } else {
-        localStorage.removeItem("token");
-        localStorage.removeItem("role");
-        localStorage.removeItem("user");
-        set({ token: null, role: null, user: null });
+        localStorage.clear();
+        set({
+          token: null,
+          role: null,
+          user: null,
+        });
       }
     },
 
+    // ---------------- THEME ----------------
     toggleTheme: () => {
       set((state) => {
         const newTheme = state.theme === "light" ? "dark" : "light";
         localStorage.setItem("theme", newTheme);
-        document.documentElement.setAttribute("data-bs-theme", newTheme);
+        document.documentElement.setAttribute(
+          "data-bs-theme",
+          newTheme,
+        );
         return { theme: newTheme };
       });
     },
 
+    // ---------------- TOKEN REFRESH ----------------
     startTokenRefreshLoop: () => {
       if (refreshInterval) return;
 
-      refreshInterval = setInterval(
-        async () => {
-          const token = localStorage.getItem("token");
-          if (!token) return;
+      refreshInterval = setInterval(async () => {
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
-          try {
-            const res = await refreshToken();
-            const newToken = res.data.token;
-            const user = res.data.user;
+        try {
+          const res = await refreshToken();
 
-            get().setToken(newToken);
-            get().setUser(user); // ← now correctly updates role too
-          } catch {
-            get().logout();
-            window.location.replace("/login");
-          }
-        },
-        4 * 60 * 1000,
-      );
+          const newToken = res.data.token;
+          const user = res.data.user;
+
+          get().setToken(newToken);
+          get().setUser(user);
+        } catch {
+          get().logout();
+          window.location.replace("/login");
+        }
+      }, 4 * 60 * 1000);
     },
   };
 });

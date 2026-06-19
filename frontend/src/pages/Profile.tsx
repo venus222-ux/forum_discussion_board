@@ -1,41 +1,37 @@
 // src/pages/Profile.tsx
-import { useEffect, useState, ChangeEvent, FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import API from "../api";
 import { toast } from "react-toastify";
 import { useStore } from "../store/useStore";
 import styles from "../styles/Profile.module.css";
 
-interface ProfileData {
-  email: string;
-  created_at?: string;
-  name?: string;
-  role?: string;
-  id: number;
-}
-
-interface FormData {
-  email: string;
-  password: string;
-  password_confirmation: string;
-}
+import type { ProfileData, ProfileUpdateRequest } from "../types/auth";
 
 const Profile = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [formData, setFormData] = useState<FormData>({
+
+  const [formData, setFormData] = useState<ProfileUpdateRequest>({
     email: "",
     password: "",
     password_confirmation: "",
   });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
+
   const setIsAuth = useStore((state) => state.setIsAuth);
 
   useEffect(() => {
     API.get("/profile")
       .then((res) => {
         setProfile(res.data);
-        setFormData((prev) => ({ ...prev, email: res.data.email || "" }));
+
+        setFormData((prev) => ({
+          ...prev,
+          email: res.data.email || "",
+        }));
+
         setLoading(false);
       })
       .catch(() => {
@@ -46,11 +42,15 @@ const Profile = () => {
   }, []);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
   const handleUpdate = (e: FormEvent) => {
     e.preventDefault();
+
     if (
       formData.password &&
       formData.password !== formData.password_confirmation
@@ -58,14 +58,17 @@ const Profile = () => {
       toast.error("Passwords do not match");
       return;
     }
+
     setUpdating(true);
+
     API.put("/profile", formData)
       .then((res) => {
         toast.success(res.data.message || "Profile updated");
+
         setProfile((prev) =>
-          prev ? { ...prev, email: formData.email } : prev,
+          prev ? { ...prev, email: formData.email } : prev
         );
-        // Clear password fields
+
         setFormData((prev) => ({
           ...prev,
           password: "",
@@ -81,7 +84,7 @@ const Profile = () => {
   const handleDelete = () => {
     if (
       !window.confirm(
-        "Are you sure? This will permanently delete your account.",
+        "Are you sure? This will permanently delete your account."
       )
     )
       return;
@@ -135,47 +138,47 @@ const Profile = () => {
   return (
     <div className={styles.container}>
       <div className={styles.profileCard}>
-        {/* Header with avatar */}
         <div className={styles.profileHeader}>
           <div className={styles.avatarLarge}>{getUserInitials()}</div>
+
           <div className={styles.profileTitle}>
             <h1>My Profile</h1>
             <p className={styles.memberSince}>
               Member since{" "}
               {profile?.created_at
-                ? new Date(profile.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
+                ? new Date(profile.created_at).toLocaleDateString()
                 : "Unknown"}
             </p>
           </div>
+
           {profile?.role && (
             <span className={styles.roleBadge}>{profile.role}</span>
           )}
         </div>
 
-        {/* Profile info summary */}
         <div className={styles.infoGrid}>
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Email</span>
-            <span className={styles.infoValue}>{profile?.email || "—"}</span>
+            <span className={styles.infoValue}>
+              {profile?.email || "—"}
+            </span>
           </div>
+
           <div className={styles.infoItem}>
             <span className={styles.infoLabel}>Account ID</span>
-            <span className={styles.infoValue}>#{profile?.id || "—"}</span>
+            <span className={styles.infoValue}>
+              #{profile?.id || "—"}
+            </span>
           </div>
         </div>
 
-        {/* Edit form */}
         <div className={styles.editSection}>
           <h2 className={styles.sectionTitle}>✏️ Edit Profile</h2>
+
           <form onSubmit={handleUpdate} autoComplete="off">
             <div className={styles.formGroup}>
-              <label htmlFor="email">Email</label>
+              <label>Email</label>
               <input
-                id="email"
                 className={styles.input}
                 name="email"
                 type="email"
@@ -187,36 +190,30 @@ const Profile = () => {
 
             <div className={styles.formRow}>
               <div className={styles.formGroup}>
-                <label htmlFor="password">New Password</label>
+                <label>New Password</label>
                 <input
-                  id="password"
-                  type="password"
                   className={styles.input}
                   name="password"
+                  type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  autoComplete="new-password"
-                  placeholder="Leave blank to keep current"
                 />
               </div>
+
               <div className={styles.formGroup}>
-                <label htmlFor="password_confirmation">Confirm Password</label>
+                <label>Confirm Password</label>
                 <input
-                  id="password_confirmation"
-                  type="password"
                   className={styles.input}
                   name="password_confirmation"
+                  type="password"
                   value={formData.password_confirmation}
                   onChange={handleChange}
-                  autoComplete="new-password"
-                  placeholder="Confirm new password"
                 />
               </div>
             </div>
 
             <div className={styles.formActions}>
               <button
-                type="submit"
                 className={styles.updateButton}
                 disabled={updating}
               >
@@ -226,14 +223,15 @@ const Profile = () => {
           </form>
         </div>
 
-        {/* Danger zone */}
         <div className={styles.dangerZone}>
           <h2 className={styles.sectionTitle}>⚠️ Danger Zone</h2>
           <p className={styles.dangerDescription}>
-            Once you delete your account, there is no going back. All your data
-            will be permanently removed.
+            Once you delete your account, there is no going back.
           </p>
-          <button className={styles.deleteButton} onClick={handleDelete}>
+          <button
+            className={styles.deleteButton}
+            onClick={handleDelete}
+          >
             🗑️ Delete Account
           </button>
         </div>

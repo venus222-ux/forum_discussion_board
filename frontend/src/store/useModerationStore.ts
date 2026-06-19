@@ -1,21 +1,7 @@
 import { create } from "zustand";
 import API from "../api";
 
-export interface Flag {
-  id: number;
-  comment_id: string;
-  reason: string;
-  status: string;
-  user: {
-    id: number;
-    name: string;
-  };
-  created_at: string;
-  comment: Comment;
-  ai_hate_label?: string;
-  ai_hate_score?: number;
-  ai_hate_reason?: string;
-}
+import type { Flag } from "@/types";
 
 interface ModerationState {
   flags: Flag[];
@@ -33,12 +19,18 @@ export const useModerationStore = create<ModerationState>((set, get) => ({
 
   fetchFlags: async () => {
     set({ loading: true });
-    const res = await API.get("/moderation/flags");
-    set({ flags: res.data, loading: false });
+
+    const res = await API.get<Flag[]>("/moderation/flags");
+
+    set({
+      flags: res.data,
+      loading: false,
+    });
   },
 
   approve: async (commentId, reason) => {
     await API.post(`/moderation/${commentId}/approve`, { reason });
+
     set({
       flags: get().flags.filter((f) => f.comment_id !== commentId),
     });
@@ -46,6 +38,7 @@ export const useModerationStore = create<ModerationState>((set, get) => ({
 
   reject: async (commentId) => {
     await API.post(`/moderation/${commentId}/reject`);
+
     set({
       flags: get().flags.filter((f) => f.comment_id !== commentId),
     });
@@ -54,7 +47,9 @@ export const useModerationStore = create<ModerationState>((set, get) => ({
   addRealtimeFlag: (commentId, totalFlags) => {
     set((state) => ({
       flags: state.flags.map((f) =>
-        f.comment_id === commentId ? { ...f, total_flags: totalFlags } : f,
+        f.comment_id === commentId
+          ? { ...f, total_flags: totalFlags }
+          : f
       ),
     }));
   },

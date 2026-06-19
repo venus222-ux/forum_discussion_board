@@ -1,24 +1,15 @@
 // src/components/ThreadCard.tsx
 import React from "react";
 import { Link } from "react-router-dom";
-import styles from "../styles/ThreadCard.module.css"; // Make sure to import styles
+import type { Thread } from "@/types";
+
+import styles from "../styles/ThreadCard.module.css";
 
 export interface ThreadCardProps {
-  thread: {
-    id: number;
-    slug: string;
-    title: string;
-    content?: string;
-    created_at: string;
-    user?: { id: number; name: string };
-    category?: { id: string; name: string; slug: string };
-    comment_count?: number;
-    like_count?: number;
-    optimistic?: boolean;
-    best_comment_id?: string; // 👈 Add this field
-  };
-  showCategory?: boolean; // optional for Home page
+  thread: Thread;
+  showCategory?: boolean;
 }
+
 
 export const ThreadCard: React.FC<ThreadCardProps> = ({
   thread,

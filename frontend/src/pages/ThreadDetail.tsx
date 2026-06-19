@@ -1,15 +1,15 @@
 import {
   useState,
   useEffect,
-  useRef,
   useCallback,
   lazy,
-  Suspense,
+  Suspense, 
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "../store/useStore";
-import { useThreadStore, Reply } from "../store/useThreadStore";
+import { useThreadStore } from "../store/useThreadStore";
+import type { Reply } from "@/types";
 import styles from "../styles/ThreadDetail.module.css";
 import API from "../api";
 
@@ -139,20 +139,7 @@ export default function ThreadDetail() {
     }
   };
 
-  const getUserInitials = (name?: string) =>
-    name
-      ? name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-          .substring(0, 2)
-      : "?";
-
-  const formatDate = (date?: string) =>
-    date
-      ? new Date(date).toLocaleString()
-      : "Unknown";
+  
 
   const timeAgo = (date?: string) =>
     date ? dayjs(date).fromNow() : "unknown";
@@ -170,55 +157,137 @@ export default function ThreadDetail() {
 
   return (
     <div className={styles.container}>
-      {/* HEADER */}
-      <div className={styles.threadCard}>
-        <h1>{thread.title}</h1>
+   {/* THREAD HEADER */}
+<div className={styles.threadCard}>
+  {/* Header Section */}
+  <div className={styles.threadHeader}>
+    {/* Category Badge */}
+    {thread.category && (
+      <div className={styles.categoryBadge}>
+        {thread.category.name}
+      </div>
+    )}
 
-        <div
-          dangerouslySetInnerHTML={{ __html: thread.content }}
-        />
+    {/* Title */}
+    <h1 className={styles.threadTitle}>
+      {thread.title}
+    </h1>
 
-        <div>
-          📅 {timeAgo(thread.created_at)} • 👁️ {thread.views || 0} views • 💬 {enrichedReplies.length} replies
+    {/* Author & Meta */}
+    <div className={styles.threadMeta}>
+      <div className={styles.author}>
+        <div className={styles.avatar}>
+          {thread.user?.name?.[0]?.toUpperCase() || "U"}
+        </div>
+        <div className={styles.authorInfo}>
+          <div className={styles.authorName}>
+            {thread.user?.name}
+          </div>
+          {thread.user?.badge && (
+            <span className={styles.authorBadge}>{thread.user.badge}</span>
+          )}
         </div>
       </div>
 
-      {/* TABS */}
-      <div className={styles.tabs}>
-        <button
-          className={activeTab === "discussion" ? styles.activeTab : ""}
-          onClick={() => setActiveTab("discussion")}
-        >
-          Discussion
-        </button>
-
-        <button
-          className={activeTab === "details" ? styles.activeTab : ""}
-          onClick={() => setActiveTab("details")}
-        >
-          Details
-        </button>
+      <div className={styles.metaStats}>
+        <div className={styles.metaItem}>
+          📅 {timeAgo(thread.created_at)}
+        </div>
+        <div className={styles.metaItem}>
+          👁️ {thread.views?.toLocaleString() || 0} views
+        </div>
+        <div className={styles.metaItem}>
+          💬 {enrichedReplies.length} replies
+        </div>
       </div>
+    </div>
+  </div>
+
+  {/* Content Body */}
+  <div className={styles.threadContent}>
+    <div
+      className={styles.contentBody}
+      dangerouslySetInnerHTML={{
+        __html: thread.content ?? "",
+      }}
+    />
+  </div>
+
+  {/* Optional: Thread Actions */}
+  <div className={styles.threadActions}>
+    {/* You can add like, share, bookmark buttons here later */}
+  </div>
+</div>
+
+  {/* TABS */}
+<div className={styles.tabs}>
+  <button
+    className={`${styles.tab} ${activeTab === "discussion" ? styles.activeTab : ""}`}
+    onClick={() => setActiveTab("discussion")}
+  >
+    💬 Discussion
+    {enrichedReplies.length > 0 && (
+      <span className={styles.tabCount}>
+        {enrichedReplies.length}
+      </span>
+    )}
+  </button>
+
+  <button
+    className={`${styles.tab} ${activeTab === "details" ? styles.activeTab : ""}`}
+    onClick={() => setActiveTab("details")}
+  >
+    📋 Details
+  </button>
+</div>
 
       {/* DISCUSSION */}
       {activeTab === "discussion" && (
         <div>
           {/* FORM */}
-          {isAuth ? (
-            <form onSubmit={handleReplySubmit}>
-              <textarea
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder="Write reply..."
-              />
+       {/* Reply Form */}
+{isAuth ? (
+  <div className={styles.replyForm}>
+    <form onSubmit={handleReplySubmit}>
+      <div className={styles.replyFormHeader}>
+        <div className={styles.replyAvatar}>You</div>
+        <div className={styles.replyName}>Write a reply...</div>
+      </div>
 
-              <button disabled={submitting || !replyContent.trim()}>
-                {submitting ? "Posting..." : "Post"}
-              </button>
-            </form>
-          ) : (
-            <Link to="/login">Login to reply</Link>
-          )}
+      <textarea
+        className={styles.replyInput}
+        value={replyContent}
+        onChange={(e) => setReplyContent(e.target.value)}
+        placeholder="Share your thoughts, questions, or feedback..."
+        rows={5}
+      />
+
+      <div className={styles.replyActions}>
+        <button
+          type="button"
+          className={styles.cancelButton}
+          onClick={() => setReplyContent("")}
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={submitting || !replyContent.trim()}
+        >
+          {submitting ? "Posting..." : "Post Reply"}
+        </button>
+      </div>
+    </form>
+  </div>
+) : (
+  <div className={styles.loginPrompt}>
+    <p>You need to be logged in to join the discussion.</p>
+    <Link to="/login" className={styles.loginButton}>
+      Sign in to reply
+    </Link>
+  </div>
+)}
 
           {/* COMMENTS */}
           <div>

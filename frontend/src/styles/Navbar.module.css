@@ -210,6 +210,7 @@
   margin: 0.5rem 0;
 }
 
+
 .logoutBtn {
   width: 100%;
   border: none;
@@ -498,3 +499,4 @@
 .navbar {
   animation: slideDown 0.3s ease;
 }
+

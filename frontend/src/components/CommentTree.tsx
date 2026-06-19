@@ -1,6 +1,7 @@
 // src/components/CommentTree.tsx
-import { useState, useMemo, useEffect } from "react";
-import { Reply, useThreadStore } from "../store/useThreadStore";
+import { useState, useMemo } from "react";
+import { useThreadStore } from "../store/useThreadStore";
+import type { Reply } from "@/types";
 import { useStore } from "../store/useStore";
 import styles from "../styles/CommentTree.module.css";
 

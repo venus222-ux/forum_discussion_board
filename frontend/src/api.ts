@@ -4,6 +4,28 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
+import type {
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  ProfileData,
+  ProfileUpdateRequest,
+  APIMessageResponse,
+} from "@/types/auth";
+
+
+/* =========================
+   Axios instance
+========================= */
+
+const API: AxiosInstance = axios.create({
+  baseURL: "http://localhost:8000/api",
+});
+
+/* =========================
+   Refresh queue system
+========================= */
+
 type FailedQueueItem = {
   resolve: (token: string) => void;
   reject: (err: unknown) => void;
@@ -12,53 +34,6 @@ type FailedQueueItem = {
 type RetryableRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
-
-export type Role = "user" | "moderator" | "admin" | null;
-
-export interface User {
-  id: number;
-  name: string;
-  email?: string;
-  role?: Role | string;
-  reputation?: number;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  user: User;
-  token_type?: string;
-  expires_in?: number;
-}
-
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-
-export interface ProfileData {
-  email: string;
-  created_at?: string;
-}
-
-export interface ProfileUpdateRequest {
-  email: string;
-  password?: string;
-  password_confirmation?: string;
-}
-
-export interface APIMessageResponse {
-  message: string;
-}
-
-const API: AxiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api",
-});
 
 let isRefreshing = false;
 let failedQueue: FailedQueueItem[] = [];
@@ -75,27 +50,32 @@ const processQueue = (data: { error?: unknown; token?: string }) => {
   failedQueue = [];
 };
 
-API.interceptors.request.use(
-  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
-    config.headers = config.headers || {};
-    const token = localStorage.getItem("token");
+/* =========================
+   Request interceptor
+========================= */
 
-    if (token) {
-      config.headers["Authorization"] = `Bearer ${token}`;
-    }
+API.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  config.headers = config.headers || {};
 
-    return config;
-  },
-);
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+/* =========================
+   Response interceptor (refresh token)
+========================= */
 
 API.interceptors.response.use(
   (res) => res,
   async (err: AxiosError) => {
     const originalRequest = err.config as RetryableRequestConfig | undefined;
 
-    if (!originalRequest) {
-      return Promise.reject(err);
-    }
+    if (!originalRequest) return Promise.reject(err);
 
     if (err.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
@@ -107,14 +87,14 @@ API.interceptors.response.use(
             originalRequest.headers["Authorization"] = `Bearer ${token}`;
             return API(originalRequest);
           })
-          .catch((queueError: unknown) => Promise.reject(queueError));
+          .catch((error) => Promise.reject(error));
       }
 
       originalRequest._retry = true;
       isRefreshing = true;
 
       try {
-        const response = await API.post<{ token: string }>("/refresh");
+        const response = await API.post<LoginResponse>("/refresh");
         const newToken = response.data.token;
 
         localStorage.setItem("token", newToken);
@@ -126,10 +106,12 @@ API.interceptors.response.use(
         originalRequest.headers["Authorization"] = `Bearer ${newToken}`;
 
         return API(originalRequest);
-      } catch (refreshError: unknown) {
+      } catch (refreshError) {
         processQueue({ error: refreshError });
+
         localStorage.removeItem("token");
         window.location.replace("/login");
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -137,53 +119,29 @@ API.interceptors.response.use(
     }
 
     return Promise.reject(err);
-  },
+  }
 );
 
-export interface User {
-  id: number;
-  name: string;
-  email?: string;
-  role?: Role | string;
-  reputation?: number;
-}
-// --- Types ---
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-export interface LoginResponse {
-  token: string;
-  user: User;
-  token_type?: string;
-  expires_in?: number;
-}
-export interface RegisterRequest {
-  name: string;
-  email: string;
-  password: string;
-}
-export interface ProfileData {
-  email: string;
-  created_at?: string;
-}
-export interface ProfileUpdateRequest {
-  email: string;
-  password?: string;
-  password_confirmation?: string;
-}
-export interface APIMessageResponse {
-  message: string;
-}
+/* =========================
+   API functions
+========================= */
 
 export const login = (data: LoginRequest) =>
   API.post<LoginResponse>("/login", data);
+
 export const register = (data: RegisterRequest) =>
   API.post<APIMessageResponse>("/register", data);
-export const getProfile = () => API.get<ProfileData>("/profile");
+
+export const getProfile = () =>
+  API.get<ProfileData>("/profile");
+
 export const updateProfile = (data: ProfileUpdateRequest) =>
   API.put<APIMessageResponse>("/profile", data);
-export const deleteProfile = () => API.delete<APIMessageResponse>("/profile");
-export const refreshToken = () => API.post<LoginResponse>("/refresh");
+
+export const deleteProfile = () =>
+  API.delete<APIMessageResponse>("/profile");
+
+export const refreshToken = () =>
+  API.post<LoginResponse>("/refresh");
 
 export default API;

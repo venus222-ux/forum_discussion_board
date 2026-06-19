@@ -3,7 +3,13 @@ import { Link } from "react-router-dom";
 import { useStore } from "../store/useStore";
 import { useState, useEffect, useMemo } from "react";
 import styles from "../styles/Home.module.css";
-import { Thread, useThreadStore } from "../store/useThreadStore";
+import { useThreadStore } from "../store/useThreadStore";
+import type {
+  Thread,
+  Category,
+  ActiveUser,
+  ActiveUserWithPoints,
+} from "@/types"
 
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -12,25 +18,8 @@ dayjs.extend(relativeTime);
 import { useQuery } from "@tanstack/react-query";
 import API from "../api";
 
-// --- TYPES ---
-interface ActiveUser {
-  id: number;
-  name: string;
-  postCount: number;
-  reputation: number;
-}
 
-interface ActiveUserWithPoints extends ActiveUser {
-  points: number;
-}
 
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  threads_count?: number;
-}
 
 // --- COMPONENT ---
 const Home: React.FC = () => {

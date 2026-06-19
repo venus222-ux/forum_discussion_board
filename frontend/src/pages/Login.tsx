@@ -4,7 +4,8 @@ import API from "../api";
 import { toast } from "react-toastify";
 import { useStore } from "../store/useStore";
 
-type Role = "user" | "moderator" | "admin";
+import type { Role } from "../types";
+
 
 const Login = () => {
   const [email, setEmail] = useState("");

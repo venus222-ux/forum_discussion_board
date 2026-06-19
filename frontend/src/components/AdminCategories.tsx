@@ -1,19 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import styles from "./AdminCategories.module.css";
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string;
-  threads_count?: number;
-  parent_id?: number | null;
-  is_active: boolean;
-  display_order?: number;
-  color?: string;
-  icon?: string;
-}
+import type { Category } from "@/types"; 
 
 const AdminCategories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);

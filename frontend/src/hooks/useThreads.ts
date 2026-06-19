@@ -1,11 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import API from "../api";
-import { Thread } from "../store/useThreadStore";
-
-interface ThreadsResponse {
-  data: Thread[];
-  next_cursor?: string | null;
-}
+import type { ThreadsResponse } from "@/types";
 
 // -----------------------------
 // Fetch threads function
