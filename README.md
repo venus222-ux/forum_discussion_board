@@ -1,37 +1,51 @@
-1. Product Vision
-   A scalable, production-ready discussion platform inspired by Reddit and StackOverflow. Designed with a modern full-stack architecture focused on performance, real-time interaction, and horizontal scalability.
+Laravel_react_boilerplate\
+├── backend/ # Laravel 12 API
+└── frontend/ # React + Vite + TS SPA
 
-- Categories & Threads: Organized discussion spaces.
-- Infinite Nesting: Deeply nested comment trees without performance degradation.
-- Real-time Engine: Instant notifications (mentions/replies) via Pusher.
-- Elite Search: Full-text search powered by Elasticsearch.
-- Polyglot Persistence: Separating structured relational data (MySQL) from flexible discussion data (MongoDB).
+## Comenzi utile de dezvoltare
 
-2. Tech Architecture
-   React
-   TypeScript
-   Vite
-   Zustand
-   TanStack Query
-   React Hook Form
+✅ 1. Set Up Laravel Backend
+cd backend
+cp .env.example .env
+composer install
+php artisan key:generate
+php artisan migrate
+php artisan db:seed
+php artisan serve
 
-Laravel API
-Redis
-Elasticsearch
-MySQL
-MongoDB
+php artisan jwt:secret
+php artisan config:clear
+php artisan config:cache
 
-3. Data Design
-   Mysql: users, categories, threads, votes, reports
-   MongoDB (Comments Collection)
+✅ 2. Set Up React Frontend
+cd ../frontend
+cp .env.example .env
+npm install
+npm run dev
 
-4. Core Features (Backlog)
-   Authentication: JWT login/register + Role-Based Access Control (Admin/Mod/User).
+✅ 3. Run in the root project:
+npm run dev
+docker-compose up -d
 
-Threads: Full CRUD with pagination and category filtering.
+## Stack tehnic
 
-Comments: Recursive tree structure, upvote/downvote system, and @username mentions.
+**Backend**
 
-Moderation: Content reporting, thread locking, and user banning tools.
+- Laravel (PHP) + MySQL
+- Redis (queue, cache) + Laravel Horizon (monitorizare cozi)
+- MongoDB (loguri de upload)
 
-Notifications: Real-time push for replies and mentions.
+**Frontend**
+
+- React + TypeScript
+- Zustand (state management)
+- React Query (data fetching pentru unele hook-uri)
+- Bootstrap + CSS Modules
+
+
+```env
+QUEUE_CONNECTION=redis
+MAIL_MAILER=smtp
+MAIL_ADMIN_ADDRESS=admin@yourcompany.com
+FRONTEND_URL=http://localhost:5173
+ELASTICSEARCH_HOST=http://127.0.0.1:9200
