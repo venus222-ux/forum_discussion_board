@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Services\Admin\AdminDashboardService;
+use Illuminate\Http\Request;
 
 class AdminController extends Controller
 {

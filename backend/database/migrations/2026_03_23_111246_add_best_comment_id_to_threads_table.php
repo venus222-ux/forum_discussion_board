@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('threads', function (Blueprint $table) {
-        $table->string('best_comment_id')->nullable();      });
+            $table->string('best_comment_id')->nullable();
+        });
     }
 
     /**
@@ -20,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-       Schema::table('threads', function (Blueprint $table) {
-    $table->dropColumn('best_comment_id');
-});
+        Schema::table('threads', function (Blueprint $table) {
+            $table->dropColumn('best_comment_id');
+        });
     }
 };

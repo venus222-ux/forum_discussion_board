@@ -1,21 +1,23 @@
 <?php
+
 // app/Models/Category.php
 // app/Models/Category.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
-    use SoftDeletes, HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'uuid', 'name', 'slug', 'description', 'icon', 'color',
-        'parent_id', 'display_order', 'is_active', 'thread_count'
+        'parent_id', 'display_order', 'is_active', 'thread_count',
     ];
 
     protected static function boot()
@@ -41,9 +43,9 @@ class Category extends Model
         $count = 1;
 
         while (self::where('slug', $slug)
-                   ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
-                   ->exists()) {
-            $slug = $originalSlug . '-' . $count;
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $originalSlug.'-'.$count;
             $count++;
         }
 

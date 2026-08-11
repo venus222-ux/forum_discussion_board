@@ -16,7 +16,7 @@ class ApproveCommentAction
         $comment->update([
             'is_hidden' => true,
             'status' => 'hidden',
-            'moderation_reason' => $data['reason'] ?? 'Hidden by moderator'
+            'moderation_reason' => $data['reason'] ?? 'Hidden by moderator',
         ]);
 
         CommentFlag::where('comment_id', $commentId)
@@ -26,7 +26,7 @@ class ApproveCommentAction
             'moderator_id' => $user->id,
             'action' => 'hide',
             'comment_id' => $commentId,
-            'reason' => $data['reason'] ?? 'Hidden by moderator'
+            'reason' => $data['reason'] ?? 'Hidden by moderator',
         ]);
 
         Redis::del("aggregated_flags:$commentId");

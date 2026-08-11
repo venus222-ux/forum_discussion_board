@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,7 +41,8 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-    public function getJWTIdentifier() {
+    public function getJWTIdentifier()
+    {
         return $this->getKey();
     }
 
@@ -55,14 +57,14 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(\App\Models\Thread::class);
     }
 
-
     public function adjustReputation(int $points)
     {
         $this->increment('reputation', $points);
     }
 
     // If needed later: comments()
-     public function comments() {
+    public function comments()
+    {
         return $this->hasMany(Comment::class);
-     }
+    }
 }

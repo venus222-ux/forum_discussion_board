@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Services\Category\CategoryService;
+use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
@@ -46,7 +45,7 @@ class CategoryController extends Controller
         $this->service->deleteCategory($slug);
 
         return response()->json([
-            'message' => 'Category deleted successfully'
+            'message' => 'Category deleted successfully',
         ]);
     }
 }

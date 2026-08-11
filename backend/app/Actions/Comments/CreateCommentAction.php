@@ -2,12 +2,12 @@
 
 namespace App\Actions\Comments;
 
-use App\Models\Thread;
-use App\Models\Comment;
-use App\Models\User;
 use App\Jobs\ProcessAiModerationJob;
-use App\Notifications\ThreadCommented;
+use App\Models\Comment;
+use App\Models\Thread;
+use App\Models\User;
 use App\Notifications\CommentReplied;
+use App\Notifications\ThreadCommented;
 
 class CreateCommentAction
 {
@@ -15,7 +15,7 @@ class CreateCommentAction
     {
         $thread = Thread::where('slug', $slug)->first();
 
-        if (!$thread) {
+        if (! $thread) {
             throw new \Exception('Thread not found');
         }
 
@@ -23,22 +23,22 @@ class CreateCommentAction
         $path = '';
         $depth = 0;
 
-        if (!empty($data['parentId'])) {
+        if (! empty($data['parentId'])) {
             $parent = Comment::where('_id', $data['parentId'])->first();
 
-            if (!$parent) {
+            if (! $parent) {
                 throw new \Exception('Parent comment not found');
             }
 
             $depth = $parent->depth + 1;
 
-            $lastChild = Comment::where('parentId', (string)$parent->_id)
+            $lastChild = Comment::where('parentId', (string) $parent->_id)
                 ->orderBy('path', 'desc')
                 ->first();
 
             $nextSegment = $lastChild ? intval(substr($lastChild->path, -3)) + 1 : 1;
 
-            $path = $parent->path . '.' . str_pad($nextSegment, 3, '0', STR_PAD_LEFT);
+            $path = $parent->path.'.'.str_pad($nextSegment, 3, '0', STR_PAD_LEFT);
 
             Comment::where('_id', $parent->_id)->increment('replyCount');
         } else {
@@ -56,12 +56,12 @@ class CreateCommentAction
             'threadId' => $thread->uuid,
             'authorId' => $actor->id,
             'content' => $data['content'],
-            'parentId' => $parent ? (string)$parent->_id : null,
+            'parentId' => $parent ? (string) $parent->_id : null,
             'path' => $path,
             'depth' => $depth,
         ]);
 
-        ProcessAiModerationJob::dispatch((string)$comment->_id);
+        ProcessAiModerationJob::dispatch((string) $comment->_id);
 
         $thread->increment('comment_count');
 

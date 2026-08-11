@@ -9,7 +9,7 @@ class ModerationLog extends Model
     protected $fillable = [
         'moderator_id',
         'action',
-        'comment_id'
+        'comment_id',
     ];
 
     protected $table = 'moderation_logs';

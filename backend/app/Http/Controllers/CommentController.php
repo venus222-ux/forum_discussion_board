@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Actions\Comments\CreateCommentAction;
-use App\Actions\Comments\VoteCommentAction;
 use App\Actions\Comments\AcceptBestAnswerAction;
+use App\Actions\Comments\CreateCommentAction;
 use App\Actions\Comments\DeleteCommentAction;
+use App\Actions\Comments\VoteCommentAction;
 use App\Services\Comment\CommentQueryService;
+use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
@@ -33,13 +32,13 @@ class CommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
         $data = $request->validate([
             'content' => 'required|string',
-            'parentId' => 'nullable|string'
+            'parentId' => 'nullable|string',
         ]);
 
         return response()->json(
@@ -53,12 +52,12 @@ class CommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
         $data = $request->validate([
-            'type' => 'required|in:upvote,downvote'
+            'type' => 'required|in:upvote,downvote',
         ]);
 
         return response()->json(
@@ -71,7 +70,7 @@ class CommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
@@ -85,7 +84,7 @@ class CommentController extends Controller
     {
         $user = auth()->user();
 
-        if (!$user) {
+        if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 

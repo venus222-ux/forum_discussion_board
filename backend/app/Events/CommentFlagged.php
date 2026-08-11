@@ -4,8 +4,6 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -15,9 +13,13 @@ class CommentFlagged implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $commentId;
+
     public $totalFlags;
+
     public $flagIncrement;
+
     public $userId;
+
     public $threadSlug;
 
     /**
@@ -40,7 +42,7 @@ class CommentFlagged implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('thread.comments.' . $this->threadSlug),
+            new Channel('thread.comments.'.$this->threadSlug),
         ];
     }
 }

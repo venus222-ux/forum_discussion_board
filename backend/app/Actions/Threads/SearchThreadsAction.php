@@ -1,14 +1,14 @@
 <?php
+
 namespace App\Actions\Threads;
 
 use App\Models\Thread;
-use Illuminate\Pagination\LengthAwarePaginator;
 
 class SearchThreadsAction
 {
     public function execute(string $query, int $page, string $url, array $params): array
     {
-        if (!$query) {
+        if (! $query) {
             return [
                 'data' => [],
                 'current_page' => 1,

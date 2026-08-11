@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Actions\Threads\ListThreadsByCategoryAction;
-use App\Actions\Threads\RecentThreadsAction;
-use App\Actions\Threads\MyThreadsAction;
-use App\Actions\Threads\ShowThreadAction;
 use App\Actions\Threads\CreateThreadAction;
-use App\Actions\Threads\UpdateThreadAction;
 use App\Actions\Threads\DeleteThreadAction;
+use App\Actions\Threads\ListThreadsByCategoryAction;
+use App\Actions\Threads\MyThreadsAction;
+use App\Actions\Threads\RecentThreadsAction;
 use App\Actions\Threads\SearchThreadsAction;
+use App\Actions\Threads\ShowThreadAction;
+use App\Actions\Threads\UpdateThreadAction;
+use Illuminate\Http\Request;
 
 class ThreadController extends Controller
 {

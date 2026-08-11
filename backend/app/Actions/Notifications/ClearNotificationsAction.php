@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Notifications;
 
 class ClearNotificationsAction

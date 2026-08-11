@@ -13,13 +13,13 @@ class CommentTreeService
 
         foreach ($comments as $comment) {
             $arr = $comment->toArray();
-            $arr['_id'] = (string)$comment->_id;
+            $arr['_id'] = (string) $comment->_id;
             $arr['children'] = [];
             $map[$arr['_id']] = $arr;
         }
 
         foreach ($map as $id => &$comment) {
-            if (!empty($comment['parentId']) && isset($map[$comment['parentId']])) {
+            if (! empty($comment['parentId']) && isset($map[$comment['parentId']])) {
                 $map[$comment['parentId']]['children'][] = &$comment;
             } else {
                 $tree[] = &$comment;
@@ -31,12 +31,14 @@ class CommentTreeService
 
     public function markBest(array $tree, ?string $bestId): array
     {
-        if (!$bestId) return $tree;
+        if (! $bestId) {
+            return $tree;
+        }
 
         foreach ($tree as &$node) {
-            $node['isBest'] = ((string)$node['_id'] === (string)$bestId);
+            $node['isBest'] = ((string) $node['_id'] === (string) $bestId);
 
-            if (!empty($node['children'])) {
+            if (! empty($node['children'])) {
                 $node['children'] = $this->markBest($node['children'], $bestId);
             }
         }
@@ -57,11 +59,11 @@ class CommentTreeService
         $ids = [];
 
         foreach ($tree as $node) {
-            if (!empty($node['authorId'])) {
+            if (! empty($node['authorId'])) {
                 $ids[] = $node['authorId'];
             }
 
-            if (!empty($node['children'])) {
+            if (! empty($node['children'])) {
                 $ids = array_merge($ids, $this->collectUserIds($node['children']));
             }
         }
@@ -76,10 +78,10 @@ class CommentTreeService
 
             $node['user'] = [
                 'id' => $node['authorId'],
-                'name' => $user->name ?? 'Anonymous'
+                'name' => $user->name ?? 'Anonymous',
             ];
 
-            if (!empty($node['children'])) {
+            if (! empty($node['children'])) {
                 $node['children'] = $this->mapUsers($node['children'], $users);
             }
         }
@@ -90,8 +92,12 @@ class CommentTreeService
     public function sort(array $tree): array
     {
         usort($tree, function ($a, $b) {
-            if (($a['isBest'] ?? false) && !($b['isBest'] ?? false)) return -1;
-            if (!($a['isBest'] ?? false) && ($b['isBest'] ?? false)) return 1;
+            if (($a['isBest'] ?? false) && ! ($b['isBest'] ?? false)) {
+                return -1;
+            }
+            if (! ($a['isBest'] ?? false) && ($b['isBest'] ?? false)) {
+                return 1;
+            }
 
             return strtotime($b['createdAt'] ?? 'now')
                 - strtotime($a['createdAt'] ?? 'now');

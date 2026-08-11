@@ -2,14 +2,13 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
+use App\Models\Comment;
 use App\Models\Thread;
 use App\Models\User;
-use App\Models\Comment;
-use MongoDB\BSON\ObjectId;
-use Illuminate\Support\Facades\DB;
 use Faker\Factory as Faker;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use MongoDB\BSON\ObjectId;
 
 class CommentSeeder extends Seeder
 {
@@ -21,11 +20,12 @@ class CommentSeeder extends Seeder
         $users = User::all();
 
         if ($threads->isEmpty() || $users->isEmpty()) {
-            $this->command->error("Threads or Users missing!");
+            $this->command->error('Threads or Users missing!');
+
             return;
         }
 
-        $this->command->info("Seeding deep nested comments + realistic votes...");
+        $this->command->info('Seeding deep nested comments + realistic votes...');
 
         foreach ($threads as $thread) {
 
@@ -67,7 +67,7 @@ class CommentSeeder extends Seeder
 
             // Update thread comment count
             $thread->update([
-                'comment_count' => $commentCount
+                'comment_count' => $commentCount,
             ]);
         }
 
@@ -80,7 +80,9 @@ class CommentSeeder extends Seeder
 
             $voteCount = rand(0, 8);
 
-            if ($voteCount === 0) continue;
+            if ($voteCount === 0) {
+                continue;
+            }
 
             $voters = $users->random(
                 min($voteCount, $users->count())
@@ -116,7 +118,7 @@ class CommentSeeder extends Seeder
             }
         }
 
-        $this->command->info("Advanced nested comments seeded successfully.");
+        $this->command->info('Advanced nested comments seeded successfully.');
     }
 
     // ==========================================================
@@ -125,7 +127,7 @@ class CommentSeeder extends Seeder
     private function createComment($faker, $users, $threadId, $parent, $path, $depth)
     {
         $isDeleted = rand(1, 100) <= 5;   // 5% deleted
-        $isEdited  = rand(1, 100) <= 15;  // 15% edited
+        $isEdited = rand(1, 100) <= 15;  // 15% edited
 
         return Comment::create([
             'threadId' => $threadId,
@@ -163,7 +165,7 @@ class CommentSeeder extends Seeder
 
         for ($i = 1; $i <= $replyCount; $i++) {
 
-            $path = $parent->path . '.' . str_pad($i, 3, '0', STR_PAD_LEFT);
+            $path = $parent->path.'.'.str_pad($i, 3, '0', STR_PAD_LEFT);
 
             $comment = $this->createComment(
                 $faker,

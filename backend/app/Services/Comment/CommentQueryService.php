@@ -2,8 +2,8 @@
 
 namespace App\Services\Comment;
 
-use App\Models\Thread;
 use App\Models\Comment;
+use App\Models\Thread;
 
 class CommentQueryService
 {
@@ -16,7 +16,7 @@ class CommentQueryService
     {
         $thread = Thread::where('slug', $slug)->first();
 
-        if (!$thread) {
+        if (! $thread) {
             return [];
         }
 

@@ -16,8 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
     ->withMiddleware(function (Middleware $middleware): void {
 
-
-
         // Global middleware
         $middleware->use([
             \Illuminate\Http\Middleware\HandleCors::class,
@@ -29,8 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // API group
         $middleware->group('api', [
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
-            \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
-
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
 
         ]);
 

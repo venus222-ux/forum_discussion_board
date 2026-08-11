@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Actions\Moderation\FlagCommentAction;
 use App\Actions\Moderation\ApproveCommentAction;
-use App\Actions\Moderation\RejectCommentAction;
-use App\Actions\Moderation\OfficialReplyAction;
+use App\Actions\Moderation\FlagCommentAction;
 use App\Actions\Moderation\ListFlagsAction;
+use App\Actions\Moderation\OfficialReplyAction;
+use App\Actions\Moderation\RejectCommentAction;
+use Illuminate\Http\Request;
 
 class ModerationController extends Controller
 {

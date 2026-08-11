@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Moderation;
 
 use App\Models\CommentFlag;

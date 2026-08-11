@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Actions\Notifications\ClearNotificationsAction;
 use App\Actions\Notifications\ListNotificationsAction;
 use App\Actions\Notifications\MarkNotificationReadAction;
-use App\Actions\Notifications\ClearNotificationsAction;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {

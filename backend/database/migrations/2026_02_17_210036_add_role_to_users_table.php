@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->enum('role', ['user', 'moderator', 'admin'])
-              ->default('user')
-              ->after('password'); // only works on some DBs like MySQL
+                ->default('user')
+                ->after('password'); // only works on some DBs like MySQL
         });
     }
 

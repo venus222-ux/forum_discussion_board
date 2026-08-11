@@ -1,17 +1,17 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Comment;
+use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;  // added for full-text search
 
 class Thread extends Model
 {
-    use SoftDeletes, HasFactory, Searchable;
+    use HasFactory, Searchable, SoftDeletes;
 
     protected $fillable = [
         'uuid',
@@ -28,7 +28,7 @@ class Thread extends Model
         'downvotes',
         'comment_count',
         'last_activity_at',
-        'best_comment_id'
+        'best_comment_id',
     ];
 
     // Define searchable data for Scout
@@ -67,10 +67,9 @@ class Thread extends Model
         $count = 1;
 
         while (self::where('slug', $slug)
-            ->when($ignoreId, fn($q) => $q->where('id', '!=', $ignoreId))
-            ->exists())
-        {
-            $slug = $originalSlug . '-' . $count;
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $originalSlug.'-'.$count;
             $count++;
         }
 
@@ -102,9 +101,10 @@ class Thread extends Model
             $cArr = $c->toArray();
             $cArr['_id'] = (string) $c->_id;
 
-            if (!empty($cArr['children'])) {
+            if (! empty($cArr['children'])) {
                 $cArr['children'] = collect($cArr['children'])->map(function ($child) {
                     $child['_id'] = (string) $child['_id'];
+
                     return $child;
                 })->toArray();
             }
@@ -112,6 +112,4 @@ class Thread extends Model
             return $cArr;
         })->toArray();
     }
-
-    
 }

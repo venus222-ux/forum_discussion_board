@@ -12,13 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('comment_flags', function (Blueprint $table) {
-          $table->id();
-          $table->string('comment_id'); // Mongo ID
-          $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-          $table->string('reason');
-          $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-          $table->timestamps();
-          $table->unique(['comment_id', 'user_id']); // one flag per user
+            $table->id();
+            $table->string('comment_id'); // Mongo ID
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('reason');
+            $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
+            $table->timestamps();
+            $table->unique(['comment_id', 'user_id']); // one flag per user
 
         });
     }

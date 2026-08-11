@@ -15,7 +15,7 @@ class CategoryRepository
     {
         return Category::withCount('threads')
             ->get()
-            ->map(fn($cat) => [
+            ->map(fn ($cat) => [
                 'name' => $cat->name,
                 'count' => $cat->threads_count,
             ])

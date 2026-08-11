@@ -5,9 +5,9 @@ namespace App\Actions\Comments;
 use App\Models\Comment;
 use App\Models\Thread;
 use App\Models\User;
-use MongoDB\BSON\ObjectId;
-use Illuminate\Support\Facades\DB;
 use App\Notifications\BestAnswerSelectedNotification;
+use Illuminate\Support\Facades\DB;
+use MongoDB\BSON\ObjectId;
 
 class AcceptBestAnswerAction
 {
@@ -17,13 +17,13 @@ class AcceptBestAnswerAction
 
         $comment = Comment::raw()->findOne(['_id' => $objectId]);
 
-        if (!$comment) {
+        if (! $comment) {
             throw new \Exception('Comment not found');
         }
 
         $thread = Thread::where('uuid', $comment['threadId'])->first();
 
-        if (!$thread) {
+        if (! $thread) {
             throw new \Exception('Thread not found');
         }
 
@@ -41,7 +41,7 @@ class AcceptBestAnswerAction
 
             if ($thread->best_comment_id) {
                 $old = Comment::raw()->findOne([
-                    '_id' => new ObjectId($thread->best_comment_id)
+                    '_id' => new ObjectId($thread->best_comment_id),
                 ]);
 
                 if ($old) {
@@ -76,7 +76,7 @@ class AcceptBestAnswerAction
 
             return [
                 'message' => 'Best answer selected',
-                'best_comment_id' => $commentId
+                'best_comment_id' => $commentId,
             ];
 
         } catch (\Exception $e) {

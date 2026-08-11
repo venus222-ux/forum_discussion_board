@@ -15,7 +15,7 @@ class RejectCommentAction
         $comment->update([
             'is_hidden' => false,
             'status' => 'active',
-            'moderation_reason' => null
+            'moderation_reason' => null,
         ]);
 
         CommentFlag::where('comment_id', $commentId)

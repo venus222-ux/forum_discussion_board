@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Threads;
 
 use App\Models\Thread;

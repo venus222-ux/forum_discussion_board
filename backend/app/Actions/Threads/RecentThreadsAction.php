@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Threads;
 
 use App\Models\Thread;
@@ -14,6 +15,7 @@ class RecentThreadsAction
         $threads->getCollection()->transform(function ($t) {
             $t->created_at = $t->created_at?->toIso8601String();
             $t->like_count = $t->upvotes - $t->downvotes;
+
             return $t;
         });
 

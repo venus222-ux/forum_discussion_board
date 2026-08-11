@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::table('users', function (Blueprint $table) {
-        $table->integer('reputation')->default(0)->after('password');
-    });
+        Schema::table('users', function (Blueprint $table) {
+            $table->integer('reputation')->default(0)->after('password');
+        });
     }
 
     /**
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-     Schema::table('users', function (Blueprint $table) {
-        $table->dropColumn('reputation');
-    });
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('reputation');
+        });
     }
 };

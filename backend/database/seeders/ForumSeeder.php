@@ -1,13 +1,14 @@
 <?php
+
 // database/seeders/ForumSeeder.php
+
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Category;
 use App\Models\Thread;
 use App\Models\User;
-use Illuminate\Support\Str;
 use Faker\Factory as Faker;
+use Illuminate\Database\Seeder;
 
 class ForumSeeder extends Seeder
 {
@@ -20,7 +21,7 @@ class ForumSeeder extends Seeder
         $techCategories = [
             'Java', 'React', 'Vue', 'Angular', 'Python', 'PHP', 'Laravel', 'Node.js',
             'Django', 'Ruby on Rails', 'C#', 'Go', 'Rust', 'Flutter', 'Kotlin', 'Swift',
-            'TypeScript', 'GraphQL', 'Docker', 'Kubernetes'
+            'TypeScript', 'GraphQL', 'Docker', 'Kubernetes',
         ];
 
         $categories = [];
@@ -42,11 +43,12 @@ class ForumSeeder extends Seeder
         // 2. Fetch all users
         $users = User::all();
         if ($users->count() === 0) {
-            $this->command->error("No users found. Please run UserSeeder first!");
+            $this->command->error('No users found. Please run UserSeeder first!');
+
             return;
         }
 
-        $this->command->info("Seeding 1000 threads with hot topics effect...");
+        $this->command->info('Seeding 1000 threads with hot topics effect...');
 
         $threadsToCreate = [];
 
@@ -80,7 +82,9 @@ class ForumSeeder extends Seeder
 
         while ($remainingThreadsCount > 0) {
             foreach ($remainingCategories as $name) {
-                if ($remainingThreadsCount <= 0) break;
+                if ($remainingThreadsCount <= 0) {
+                    break;
+                }
                 $threadsToCreate[] = [
                     'category' => $categories[$name],
                     'user' => $users->random(),
@@ -118,6 +122,6 @@ class ForumSeeder extends Seeder
             ]);
         }
 
-        $this->command->info("Seeded 20 categories and 1000 threads with 0 votes and comments successfully!");
+        $this->command->info('Seeded 20 categories and 1000 threads with 0 votes and comments successfully!');
     }
 }

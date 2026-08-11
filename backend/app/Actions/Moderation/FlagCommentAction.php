@@ -2,7 +2,6 @@
 
 namespace App\Actions\Moderation;
 
-use App\Models\Comment;
 use App\Models\CommentFlag;
 use App\Services\Moderation\CommentModerationService;
 use Illuminate\Support\Facades\Redis;
@@ -34,14 +33,14 @@ class FlagCommentAction
             'comment_id' => $commentId,
             'user_id' => $user->id,
             'reason' => $data['reason'],
-            'status' => 'pending'
+            'status' => 'pending',
         ]);
 
         $this->moderationService->autoHide($commentId);
 
         return [
             'message' => 'Flag submitted',
-            'total_flags' => CommentFlag::where('comment_id', $commentId)->count()
+            'total_flags' => CommentFlag::where('comment_id', $commentId)->count(),
         ];
     }
 }

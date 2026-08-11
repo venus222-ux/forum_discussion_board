@@ -5,8 +5,8 @@ namespace App\Actions\Comments;
 use App\Models\Comment;
 use App\Models\CommentVote;
 use App\Models\User;
-use MongoDB\BSON\ObjectId;
 use App\Notifications\CommentLiked;
+use MongoDB\BSON\ObjectId;
 
 class VoteCommentAction
 {
@@ -18,7 +18,7 @@ class VoteCommentAction
 
         $comment = Comment::raw()->findOne(['_id' => $objectId]);
 
-        if (!$comment) {
+        if (! $comment) {
             throw new \Exception('Comment not found');
         }
 
@@ -30,7 +30,7 @@ class VoteCommentAction
 
         $existingVote = CommentVote::raw()->findOne([
             'commentId' => $objectId,
-            'userId' => $userId
+            'userId' => $userId,
         ]);
 
         $action = null;
@@ -39,7 +39,7 @@ class VoteCommentAction
             if ($existingVote['voteType'] === $data['type']) {
                 CommentVote::raw()->deleteOne([
                     'commentId' => $objectId,
-                    'userId' => $userId
+                    'userId' => $userId,
                 ]);
 
                 $field = $data['type'] === 'upvote' ? 'upvotes' : 'downvotes';
@@ -67,7 +67,7 @@ class VoteCommentAction
                 'commentId' => $objectId,
                 'userId' => $userId,
                 'voteType' => $data['type'],
-                'createdAt' => now()
+                'createdAt' => now(),
             ]);
 
             $field = $data['type'] === 'upvote' ? 'upvotes' : 'downvotes';
@@ -111,8 +111,8 @@ class VoteCommentAction
         }
 
         return [
-            'message' => 'Vote ' . $action,
-            'action' => $action
+            'message' => 'Vote '.$action,
+            'action' => $action,
         ];
     }
 }

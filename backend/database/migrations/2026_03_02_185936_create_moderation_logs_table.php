@@ -12,12 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('moderation_logs', function (Blueprint $table) {
-          $table->id();
-          $table->foreignId('moderator_id')->constrained('users');
-          $table->string('action');
-          $table->string('comment_id');
-          $table->text('reason')->nullable();
-          $table->timestamps();
+            $table->id();
+            $table->foreignId('moderator_id')->constrained('users');
+            $table->string('action');
+            $table->string('comment_id');
+            $table->text('reason')->nullable();
+            $table->timestamps();
         });
     }
 

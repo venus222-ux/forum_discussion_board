@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-
 
 class UserSeeder extends Seeder
 {
@@ -32,17 +31,17 @@ class UserSeeder extends Seeder
             'password' => bcrypt('password123'),
         ]);
 
-          User::factory()->create([
+        User::factory()->create([
             'name' => 'Stefania',
             'email' => 'moderator1@example.com',
-            'role' =>'moderator',
+            'role' => 'moderator',
             'password' => bcrypt('password123'),
         ]);
 
         User::factory()->create([
             'name' => 'admin',
             'email' => 'admin1@example.com',
-            'role' =>'admin',
+            'role' => 'admin',
             'password' => bcrypt('password123'),
         ]);
         // More users via factory

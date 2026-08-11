@@ -13,11 +13,11 @@ class ThreadRepository
 
     public function recentWithRelations(int $limit = 5): array
     {
-        return Thread::with('user','category')
-            ->orderBy('created_at','desc')
+        return Thread::with('user', 'category')
+            ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
-            ->map(fn($thread) => [
+            ->map(fn ($thread) => [
                 'id' => $thread->id,
                 'title' => $thread->title,
                 'user' => ['name' => $thread->user->name ?? 'Unknown'],

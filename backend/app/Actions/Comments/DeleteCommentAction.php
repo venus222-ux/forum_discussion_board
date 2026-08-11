@@ -11,11 +11,11 @@ class DeleteCommentAction
         Comment::where('_id', $commentId)->update([
             'status' => 'deleted',
             'content' => '[deleted]',
-            'updatedAt' => now()
+            'updatedAt' => now(),
         ]);
 
         return [
-            'message' => 'Deleted'
+            'message' => 'Deleted',
         ];
     }
 }

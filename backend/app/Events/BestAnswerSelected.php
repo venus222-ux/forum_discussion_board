@@ -1,9 +1,9 @@
 <?php
 
 // app/Events/BestAnswerSelected.php
+
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
@@ -14,8 +14,11 @@ class BestAnswerSelected implements ShouldBroadcast
     use InteractsWithSockets, SerializesModels;
 
     public $commentId;
+
     public $threadId;
+
     public $authorId;
+
     public $reputation;
 
     public function __construct($commentId, $threadId, $authorId, $reputation)
@@ -28,7 +31,7 @@ class BestAnswerSelected implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        return new PrivateChannel('user.' . $this->authorId);
+        return new PrivateChannel('user.'.$this->authorId);
     }
 
     public function broadcastWith()

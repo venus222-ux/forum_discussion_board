@@ -16,7 +16,7 @@ class OfficialReplyAction
 
         $next = $lastChild ? intval(substr($lastChild->path, -3)) + 1 : 1;
 
-        $path = $parent->path . '.' . str_pad($next, 3, '0', STR_PAD_LEFT);
+        $path = $parent->path.'.'.str_pad($next, 3, '0', STR_PAD_LEFT);
 
         return Comment::create([
             'threadId' => $parent->threadId,
@@ -27,7 +27,7 @@ class OfficialReplyAction
             'depth' => $parent->depth + 1,
             'official_reply' => true,
             'status' => 'active',
-            'is_hidden' => false
+            'is_hidden' => false,
         ]);
     }
 }

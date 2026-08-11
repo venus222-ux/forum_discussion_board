@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Threads;
 
 use App\Models\Thread;
@@ -14,7 +15,7 @@ class ShowThreadAction
 
         $key = "thread_view_{$thread->id}_{$ip}";
 
-        if (!Cache::has($key)) {
+        if (! Cache::has($key)) {
             $thread->increment('views');
             Cache::put($key, true, now()->addHours(24));
             $thread->refresh();

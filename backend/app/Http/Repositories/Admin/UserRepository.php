@@ -16,7 +16,7 @@ class UserRepository
     {
         return User::orderBy('created_at', 'desc')
             ->limit($limit)
-            ->get(['id','name','email','role','created_at'])
+            ->get(['id', 'name', 'email', 'role', 'created_at'])
             ->toArray();
     }
 

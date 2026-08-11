@@ -1,11 +1,12 @@
 <?php
 
 // app/Notifications/ThreadCommented.php
+
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\BroadcastMessage;
+use Illuminate\Notifications\Notification;
 
 class ThreadCommented extends Notification
 {
@@ -25,7 +26,7 @@ class ThreadCommented extends Notification
             'thread_id' => $this->thread->uuid,
             'thread_title' => $this->thread->title,
             'comment_id' => (string) $this->comment->_id,
-            'actor_name' => $this->actor->name
+            'actor_name' => $this->actor->name,
         ];
     }
 

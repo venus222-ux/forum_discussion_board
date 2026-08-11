@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Actions\Notifications;
 
 class MarkNotificationReadAction
@@ -10,7 +11,7 @@ class MarkNotificationReadAction
         $notification->markAsRead();
 
         return [
-            'success' => true
+            'success' => true,
         ];
     }
 }

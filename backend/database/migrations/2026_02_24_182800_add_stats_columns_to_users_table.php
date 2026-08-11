@@ -30,7 +30,7 @@ return new class extends Migration
                 'accepted_answers',
                 'given_best_answers',
                 'total_upvotes',
-                'total_downvotes'
+                'total_downvotes',
             ]);
         });
     }

@@ -16,7 +16,7 @@ class CommentRepository
     {
         $startMongo = new UTCDateTime($startDate->timestamp * 1000);
 
-        $results = Comment::raw(function($collection) use ($startMongo) {
+        $results = Comment::raw(function ($collection) use ($startMongo) {
             return $collection->aggregate([
                 ['$match' => ['createdAt' => ['$gte' => $startMongo]]],
                 ['$sort' => ['upvotes' => -1]],
@@ -24,8 +24,8 @@ class CommentRepository
             ]);
         });
 
-        return array_map(fn($c) => [
-            'id' => (string)($c->_id ?? ''),
+        return array_map(fn ($c) => [
+            'id' => (string) ($c->_id ?? ''),
             'content' => $c->content ?? '',
             'upvotes' => $c->upvotes ?? 0,
             'downvotes' => $c->downvotes ?? 0,

@@ -61,7 +61,10 @@ class AiModerationService
 
     private function getToxicityLabel(float $score): string
     {
-        if ($score >= 0.60) return 'toxic';   // Lower threshold for testing
+        if ($score >= 0.60) {
+            return 'toxic';
+        }   // Lower threshold for testing
+
         return 'safe';
     }
 }

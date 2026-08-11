@@ -3,17 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Notifications\ResetPasswordNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Notifications\ResetPasswordNotification;
 
 class AuthController extends Controller
 {
     // --- REGISTER ---
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         $data = $request->validate([
             'name' => 'required',
             'email' => 'required|email|unique:users',
@@ -34,52 +35,55 @@ class AuthController extends Controller
     }
 
     // --- LOGIN ---
-public function login(Request $request) {
-    $credentials = $request->only('email','password');
+    public function login(Request $request)
+    {
+        $credentials = $request->only('email', 'password');
 
-    if (!$token = Auth::guard('api')->attempt($credentials)) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+        if (! $token = Auth::guard('api')->attempt($credentials)) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $user = Auth::guard('api')->user();
+
+        // Mark user online for 5 min
+        Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
+
+        return response()->json([
+            'token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => strtolower($user->role), // normalize to frontend Role
+            ],
+        ]);
     }
 
-    $user = Auth::guard('api')->user();
-
-    // Mark user online for 5 min
-    Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
-
-    return response()->json([ 
-        'token' => $token,
-        'token_type' => 'bearer',
-        'expires_in' => auth('api')->factory()->getTTL() * 60,
-        'user' => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => strtolower($user->role), // normalize to frontend Role
-        ],
-    ]);
-}
-
     // --- REFRESH JWT token---
-// app/Http/Controllers/AuthController.php
-public function refresh() {
-    $newToken = auth('api')->refresh();
-    $user = auth('api')->user();
+    // app/Http/Controllers/AuthController.php
+    public function refresh()
+    {
+        $newToken = auth('api')->refresh();
+        $user = auth('api')->user();
 
-    return response()->json([
-        'token' => $newToken,
-        'token_type' => 'bearer',
-        'expires_in' => auth('api')->factory()->getTTL() * 60,
-        'user' => [                          // ← ADD THIS
-            'id'    => $user->id,
-            'name'  => $user->name,
-            'email' => $user->email,
-            'role'  => $user->role,
-        ]
-    ]);
-}
+        return response()->json([
+            'token' => $newToken,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => [                          // ← ADD THIS
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+            ],
+        ]);
+    }
 
     // --- LOGOUT ---
-    public function logout() {
+    public function logout()
+    {
         $user = Auth::guard('api')->user();
         Cache::forget("user-is-online-{$user->id}");
         Auth::guard('api')->logout();
@@ -88,8 +92,10 @@ public function refresh() {
     }
 
     // --- PROFILE ---
-    public function profile() {
+    public function profile()
+    {
         $user = auth()->user();
+
         return response()->json([
             'name' => $user->name,
             'email' => $user->email,
@@ -97,10 +103,11 @@ public function refresh() {
         ]);
     }
 
-    public function updateProfile(Request $request) {
+    public function updateProfile(Request $request)
+    {
         $user = auth()->user();
         $request->validate([
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|min:6|confirmed',
         ]);
 
@@ -113,14 +120,17 @@ public function refresh() {
         return response()->json(['message' => 'Profile updated successfully']);
     }
 
-    public function destroyProfile() {
+    public function destroyProfile()
+    {
         $user = auth()->user();
         $user->delete();
+
         return response()->json(['message' => 'Account deleted successfully']);
     }
 
     // --- FORGOT PASSWORD ---
-    public function forgotPassword(Request $request) {
+    public function forgotPassword(Request $request)
+    {
         $request->validate(['email' => 'required|email|exists:users,email']);
 
         $token = Str::random(64);
@@ -136,7 +146,8 @@ public function refresh() {
     }
 
     // --- RESET PASSWORD ---
-    public function resetPassword(Request $request) {
+    public function resetPassword(Request $request)
+    {
         $request->validate([
             'email' => 'required|email|exists:users,email',
             'token' => 'required',
@@ -148,7 +159,7 @@ public function refresh() {
             ->where('token', $request->token)
             ->first();
 
-        if (!$reset || now()->diffInMinutes($reset->created_at) > 60) {
+        if (! $reset || now()->diffInMinutes($reset->created_at) > 60) {
             return response()->json(['message' => 'Invalid or expired token'], 400);
         }
 
@@ -161,21 +172,22 @@ public function refresh() {
         return response()->json(['message' => 'Password has been reset successfully']);
     }
 
-      // --- GET CURRENT USER ---
-    public function me() {
-     return response()->json([
-        'id' => auth()->id(),
-        'name' => auth()->user()->name,
-        'email' => auth()->user()->email,
-        'role' => auth()->user()->role,
-     ]);
+    // --- GET CURRENT USER ---
+    public function me()
+    {
+        return response()->json([
+            'id' => auth()->id(),
+            'name' => auth()->user()->name,
+            'email' => auth()->user()->email,
+            'role' => auth()->user()->role,
+        ]);
     }
 
-    public function getJWTCustomClaims() {
-       return [
-        'role' => $this->role
-    ];
+    public function getJWTCustomClaims()
+    {
+        return [
+            'role' => $this->role,
+        ];
 
-}
-
+    }
 }

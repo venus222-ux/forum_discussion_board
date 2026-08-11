@@ -5,7 +5,6 @@ namespace App\Services\Moderation;
 use App\Models\Comment;
 use App\Models\CommentFlag;
 use App\Models\Thread;
-use Illuminate\Support\Facades\Redis;
 
 class CommentModerationService
 {
@@ -16,7 +15,9 @@ class CommentModerationService
             ->count();
 
         $comment = Comment::find($commentId);
-        if (!$comment) return;
+        if (! $comment) {
+            return;
+        }
 
         $wasHidden = $comment->is_hidden;
 
@@ -26,26 +27,26 @@ class CommentModerationService
             $updateData = [
                 'is_hidden' => true,
                 'status' => 'hidden',
-                'moderation_reason' => 'AI hate detection + community flags'
+                'moderation_reason' => 'AI hate detection + community flags',
             ];
         } elseif ($comment->ai_label === 'toxic' && $count >= 3) {
             $updateData = [
                 'is_hidden' => true,
                 'status' => 'hidden',
-                'moderation_reason' => 'AI + community flags'
+                'moderation_reason' => 'AI + community flags',
             ];
         } elseif ($count >= 5) {
             $updateData = [
                 'is_hidden' => true,
                 'status' => 'hidden',
-                'moderation_reason' => 'Auto-hidden due to multiple flags'
+                'moderation_reason' => 'Auto-hidden due to multiple flags',
             ];
         }
 
         if ($updateData) {
             $comment->update($updateData);
 
-            if (!$wasHidden) {
+            if (! $wasHidden) {
                 $thread = Thread::where('uuid', $comment->threadId)->first();
 
                 broadcast(new \App\Events\CommentModerated(
