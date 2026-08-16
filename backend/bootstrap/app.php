@@ -15,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
 
     ->withMiddleware(function (Middleware $middleware): void {
-
+         $middleware->append(\App\Http\Middleware\PrometheusMetricsMiddleware::class);
         // Global middleware
         $middleware->use([
             \Illuminate\Http\Middleware\HandleCors::class,
