@@ -3,7 +3,7 @@
 namespace App\Http\Repositories\Admin;
 
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class UserRepository
 {
@@ -14,17 +14,26 @@ class UserRepository
 
     public function recent(int $limit = 5): array
     {
-        return User::orderBy('created_at', 'desc')
+        return User::with('roles')
+            ->orderBy('created_at', 'desc')
             ->limit($limit)
-            ->get(['id', 'name', 'email', 'role', 'created_at'])
+            ->get([
+                'id',
+                'name',
+                'email',
+                'created_at',
+            ])
             ->toArray();
     }
 
     public function roleDistribution(): array
     {
-        return User::select('role', DB::raw('count(*) as count'))
-            ->groupBy('role')
+        return Role::withCount('users')
             ->get()
+            ->map(fn ($role) => [
+                'role' => $role->name,
+                'count' => $role->users_count,
+            ])
             ->toArray();
     }
 }

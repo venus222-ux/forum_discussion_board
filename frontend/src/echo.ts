@@ -1,4 +1,3 @@
-// src/echo.ts
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
 import axios from "axios";
@@ -18,6 +17,7 @@ declare global {
 // -----------------------------
 export const fetchDashboard = async (range: string = "30d") => {
   const token = localStorage.getItem("token");
+
   if (!token) {
     console.error("No auth token found");
     return;
@@ -25,13 +25,14 @@ export const fetchDashboard = async (range: string = "30d") => {
 
   try {
     const response = await axios.get(
-      `${import.meta.env.VITE_BACKEND_URL}/api/admin/dashboard?range=${range}`,
+      `${import.meta.env.VITE_API_URL}/api/admin/dashboard?range=${range}`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       },
     );
+
     return response.data;
   } catch (err: any) {
     console.error(
@@ -57,9 +58,12 @@ const authorizer = (channel: any) => {
       callback: (error: Error | null, data?: any) => void,
     ) => {
       const token = localStorage.getItem("token");
-      if (!token) return callback(new Error("No token"));
 
-      fetch(`${import.meta.env.VITE_BACKEND_URL}/broadcasting/auth`, {
+      if (!token) {
+        return callback(new Error("No token"));
+      }
+
+      fetch(`${import.meta.env.VITE_API_URL}/broadcasting/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -71,11 +75,14 @@ const authorizer = (channel: any) => {
         }),
       })
         .then((res) => {
-          if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+          if (!res.ok) {
+            throw new Error(`${res.status} ${res.statusText}`);
+          }
+
           return res.json();
         })
-        .then((data) => callback(null, data)) // ✅ first argument must be null on success
-        .catch((err: Error) => callback(err)); // ✅ first argument is Error on failure
+        .then((data) => callback(null, data))
+        .catch((err: Error) => callback(err));
     },
   };
 };
@@ -83,23 +90,24 @@ const authorizer = (channel: any) => {
 // -----------------------------
 // Initialize Echo
 // -----------------------------
-const token = localStorage.getItem("token"); // ✅ define it before using it below
+const token = localStorage.getItem("token");
 
 const echo = new Echo({
   broadcaster: "pusher",
   key: import.meta.env.VITE_PUSHER_APP_KEY,
   cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || "mt1",
+
   wsHost: import.meta.env.VITE_PUSHER_HOST,
   wsPort: Number(import.meta.env.VITE_PUSHER_PORT),
-  forceTLS: import.meta.env.VITE_PUSHER_SCHEME === "https",
-  
-  // FIX 1: Permitem doar ws (HTTP) local, exact ca în pasul #8 din postmortem
-  enabledTransports: ["ws"], 
-  
-  // FIX 2: Scăpăm de warning-ul legat de deprecation
-  enableStats: false, 
 
-  authEndpoint: "http://localhost:8000/api/broadcasting/auth",
+  forceTLS: import.meta.env.VITE_PUSHER_SCHEME === "https",
+
+  enabledTransports: ["ws"],
+
+  enableStats: false,
+
+  authEndpoint: `${import.meta.env.VITE_API_URL}/api/broadcasting/auth`,
+
   auth: {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -109,4 +117,5 @@ const echo = new Echo({
 });
 
 window.Echo = echo;
+
 export default echo;

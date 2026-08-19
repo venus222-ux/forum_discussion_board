@@ -18,6 +18,7 @@
         "mongodb/mongodb": "^1.21",
         "promphp/prometheus_client_php": "^2.15",
         "pusher/pusher-php-server": "^7.2",
+        "spatie/laravel-permission": "^8.3",
         "tymon/jwt-auth": "^2.2"
     },
     "require-dev": {

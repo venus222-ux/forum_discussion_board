@@ -12,75 +12,80 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    // --- REGISTER ---
     public function register(Request $request)
-    {
-        $data = $request->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
-            'role' => 'required|in:user,moderator',
-        ]);
+{
+    $data = $request->validate([
+        'name' => 'required',
+        'email' => 'required|email|unique:users',
+        'password' => 'required|min:6|confirmed',
+        'role' => 'required|in:user,moderator',
+    ]);
 
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'password' => bcrypt($data['password']),
-            'role' => $data['role'],
-        ]);
+    $user = User::create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => bcrypt($data['password']),
+    ]);
 
-        $token = auth('api')->login($user);
+    $user->assignRole($data['role']);
 
-        return response()->json(['token' => $token]);
+    $token = auth('api')->login($user);
+
+    return response()->json(['token' => $token]);
+}
+
+public function login(Request $request)
+{
+    $credentials = $request->only('email', 'password');
+
+    if (! $token = Auth::guard('api')->attempt($credentials)) {
+        return response()->json(['error' => 'Unauthorized'], 401);
     }
 
-    // --- LOGIN ---
-    public function login(Request $request)
-    {
-        $credentials = $request->only('email', 'password');
+    $user = Auth::guard('api')->user();
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+    Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
 
-        $user = Auth::guard('api')->user();
+    return response()->json([
+        'token' => $token,
+        'token_type' => 'bearer',
+        'expires_in' => auth('api')->factory()->getTTL() * 60,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->getRoleNames()->first(),
+        ],
+    ]);
+}
 
-        // Mark user online for 5 min
-        Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
+public function refresh()
+{
+    $newToken = auth('api')->refresh();
+    $user = auth('api')->user();
 
-        return response()->json([
-            'token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => strtolower($user->role), // normalize to frontend Role
-            ],
-        ]);
-    }
+    return response()->json([
+        'token' => $newToken,
+        'token_type' => 'bearer',
+        'expires_in' => auth('api')->factory()->getTTL() * 60,
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->getRoleNames()->first(),
+        ],
+    ]);
+}
 
-    // --- REFRESH JWT token---
-    // app/Http/Controllers/AuthController.php
-    public function refresh()
-    {
-        $newToken = auth('api')->refresh();
-        $user = auth('api')->user();
-
-        return response()->json([
-            'token' => $newToken,
-            'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'user' => [                          // ← ADD THIS
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-        ]);
-    }
-
+public function me()
+{
+    return response()->json([
+        'id' => auth()->id(),
+        'name' => auth()->user()->name,
+        'email' => auth()->user()->email,
+        'role' => auth()->user()->getRoleNames()->first(),
+    ]);
+}
     // --- LOGOUT ---
     public function logout()
     {
@@ -172,22 +177,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Password has been reset successfully']);
     }
 
-    // --- GET CURRENT USER ---
-    public function me()
-    {
-        return response()->json([
-            'id' => auth()->id(),
-            'name' => auth()->user()->name,
-            'email' => auth()->user()->email,
-            'role' => auth()->user()->role,
-        ]);
-    }
 
-    public function getJWTCustomClaims()
-    {
-        return [
-            'role' => $this->role,
-        ];
 
-    }
+  
 }

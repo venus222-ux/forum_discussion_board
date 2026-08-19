@@ -5,23 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
         'accepted_answers',
         'given_best_answers',
         'total_upvotes',
         'total_downvotes',
         'reputation',
-
     ];
 
     protected $hidden = [
@@ -48,10 +47,9 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims(): array
     {
-        return ['role' => $this->role];
+        return ['role' => $this->getRoleNames()->first()];
     }
 
-    // A user can have many threads
     public function threads()
     {
         return $this->hasMany(\App\Models\Thread::class);
@@ -62,7 +60,6 @@ class User extends Authenticatable implements JWTSubject
         $this->increment('reputation', $points);
     }
 
-    // If needed later: comments()
     public function comments()
     {
         return $this->hasMany(Comment::class);

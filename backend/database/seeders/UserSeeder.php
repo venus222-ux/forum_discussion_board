@@ -9,42 +9,56 @@ use Illuminate\Support\Facades\DB;
 class UserSeeder extends Seeder
 {
     public function run()
-    {
-        DB::table('users')->delete();
+{
+    // Create/ensure privileged accounts exist first
+    $admin = User::firstOrCreate(
+        ['email' => 'admin@example.com'],
+        ['name' => 'Admin', 'password' => bcrypt('password123')]
+    );
+    $admin->syncRoles(['admin']);
 
-        User::factory()->create([
+    $moderator = User::firstOrCreate(
+        ['email' => 'moderator@example.com'],
+        ['name' => 'Moderator', 'password' => bcrypt('password123')]
+    );
+    $moderator->syncRoles(['moderator']);
+
+    // Reset all normal users, but keep admin and moderator
+    DB::table('users')
+        ->whereNotIn('email', ['admin@example.com', 'moderator@example.com'])
+        ->delete();
+
+        
+        // Reset all normal users, but keep admin and moderator
+        DB::table('users')
+            ->whereNotIn('email', ['admin@example.com', 'moderator@example.com'])
+            ->delete();
+
+        // Create normal users
+        $alice = User::factory()->create([
             'name' => 'Alice Smith',
             'email' => 'alice@example.com',
             'password' => bcrypt('password123'),
         ]);
+        $alice->assignRole('user');
 
-        User::factory()->create([
+        $bob = User::factory()->create([
             'name' => 'Bob Johnson',
             'email' => 'bob@example.com',
             'password' => bcrypt('password123'),
         ]);
+        $bob->assignRole('user');
 
-        User::factory()->create([
+        $charlie = User::factory()->create([
             'name' => 'Charlie Davis',
             'email' => 'charlie@example.com',
-
             'password' => bcrypt('password123'),
         ]);
+        $charlie->assignRole('user');
 
-        User::factory()->create([
-            'name' => 'Stefania',
-            'email' => 'moderator1@example.com',
-            'role' => 'moderator',
-            'password' => bcrypt('password123'),
-        ]);
-
-        User::factory()->create([
-            'name' => 'admin',
-            'email' => 'admin1@example.com',
-            'role' => 'admin',
-            'password' => bcrypt('password123'),
-        ]);
-        // More users via factory
-        User::factory(7)->create();
+        // More normal users via factory
+        User::factory(7)->create()->each(function (User $user) {
+            $user->assignRole('user');
+        });
     }
 }
