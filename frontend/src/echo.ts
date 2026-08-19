@@ -83,13 +83,29 @@ const authorizer = (channel: any) => {
 // -----------------------------
 // Initialize Echo
 // -----------------------------
+const token = localStorage.getItem("token"); // ✅ define it before using it below
+
 const echo = new Echo({
   broadcaster: "pusher",
   key: import.meta.env.VITE_PUSHER_APP_KEY,
-  cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
-  forceTLS: true,
-  authEndpoint: `${import.meta.env.VITE_BACKEND_URL}/broadcasting/auth`,
-  authorizer: authorizer as any, // cast to avoid TS issues
+  cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || "mt1",
+  wsHost: import.meta.env.VITE_PUSHER_HOST,
+  wsPort: Number(import.meta.env.VITE_PUSHER_PORT),
+  forceTLS: import.meta.env.VITE_PUSHER_SCHEME === "https",
+  
+  // FIX 1: Permitem doar ws (HTTP) local, exact ca în pasul #8 din postmortem
+  enabledTransports: ["ws"], 
+  
+  // FIX 2: Scăpăm de warning-ul legat de deprecation
+  enableStats: false, 
+
+  authEndpoint: "http://localhost:8000/api/broadcasting/auth",
+  auth: {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+  },
 });
 
 window.Echo = echo;

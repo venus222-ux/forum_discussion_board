@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: forum_app
+    container_name: forum_discussion_app
     restart: unless-stopped
     command: frankenphp run --config /var/www/html/Caddyfile
     ports:
@@ -21,27 +21,29 @@ services:
         condition: service_started
       mongodb:
         condition: service_started
+      elasticsearch:
+        condition: service_healthy
     environment:
       - APP_ENV=local
       - APP_NAME=Laravel
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=forum
-      - DB_USERNAME=forum
+      - DB_DATABASE=forum_discussion
+      - DB_USERNAME=forum_discussion
       - DB_PASSWORD=secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_CACHE_DB=1
       - DB_MONGO_HOST=mongodb
       - DB_MONGO_PORT=27017
-      - DB_MONGO_DATABASE=forum
+      - DB_MONGO_DATABASE=forum_discussion
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
       - BROADCAST_CONNECTION=pusher
-      - PUSHER_APP_ID=2167836
-      - PUSHER_APP_KEY=5ee1fb8bd686b4f97594
-      - PUSHER_APP_SECRET=78c85c8a40e398fa3e80
+      - PUSHER_APP_ID=forum_discussion
+      - PUSHER_APP_KEY=forum_discussion_key
+      - PUSHER_APP_SECRET=forum_discussion_secret
       - PUSHER_HOST=soketi
       - PUSHER_PORT=6001
       - PUSHER_SCHEME=http
@@ -62,7 +64,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: forum_worker
+    container_name: forum_discussion_worker
     restart: unless-stopped
     command: php artisan horizon
     volumes:
@@ -80,8 +82,8 @@ services:
       - DB_CONNECTION=mysql
       - DB_HOST=mysql
       - DB_PORT=3306
-      - DB_DATABASE=forum
-      - DB_USERNAME=forum
+      - DB_DATABASE=forum_discussion
+      - DB_USERNAME=forum_discussion
       - DB_PASSWORD=secret
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -89,7 +91,14 @@ services:
       - REDIS_CACHE_DB=1
       - DB_MONGO_HOST=mongodb
       - DB_MONGO_PORT=27017
-      - DB_MONGO_DATABASE=forum
+      - DB_MONGO_DATABASE=forum_discussion
+      - BROADCAST_CONNECTION=pusher
+      - PUSHER_APP_ID=forum_discussion
+      - PUSHER_APP_KEY=forum_discussion_key
+      - PUSHER_APP_SECRET=forum_discussion_secret
+      - PUSHER_HOST=soketi
+      - PUSHER_PORT=6001
+      - PUSHER_SCHEME=http
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
 
@@ -100,7 +109,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: forum_frontend
+    container_name: forum_discussion_frontend
     restart: unless-stopped
     command: npm run dev -- --host 0.0.0.0
     ports:
@@ -121,13 +130,13 @@ services:
   # ─────────────────────────────────────────────
   mysql:
     image: mysql:8.0
-    container_name: forum_mysql
+    container_name: forum_discussion_mysql
     restart: unless-stopped
     ports:
       - "3307:3306"
     environment:
-      - MYSQL_DATABASE=forum
-      - MYSQL_USER=forum
+      - MYSQL_DATABASE=forum_discussion
+      - MYSQL_USER=forum_discussion
       - MYSQL_PASSWORD=secret
       - MYSQL_ROOT_PASSWORD=root_secret
     volumes:
@@ -153,7 +162,7 @@ services:
   # ─────────────────────────────────────────────
   mongodb:
     image: mongo:7
-    container_name: forum_mongodb
+    container_name: forum_discussion_mongodb
     restart: unless-stopped
     ports:
       - "27018:27017"
@@ -165,7 +174,7 @@ services:
   # ─────────────────────────────────────────────
   redis:
     image: redis:7
-    container_name: forum_redis
+    container_name: forum_discussion_redis
     restart: unless-stopped
     ports:
       - "6380:6379"
@@ -177,7 +186,7 @@ services:
   # ─────────────────────────────────────────────
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.10
-    container_name: forum_elasticsearch
+    container_name: forum_discussion_elasticsearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
@@ -197,29 +206,35 @@ services:
         hard: 65536
     volumes:
       - es_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   # ─────────────────────────────────────────────
   # Soketi (server WebSocket, compatibil Pusher)
   # ─────────────────────────────────────────────
   soketi:
     image: quay.io/soketi/soketi:1.6-16-alpine
-    container_name: forum_soketi
+    container_name: forum_discussion_soketi
     restart: unless-stopped
     ports:
       - "6001:6001"
       - "9601:9601"
     environment:
       - SOKETI_DEBUG=1
-      - SOKETI_DEFAULT_APP_ID=forum
-      - SOKETI_DEFAULT_APP_KEY=forum_key
-      - SOKETI_DEFAULT_APP_SECRET=forum_secret
+      - SOKETI_DEFAULT_APP_ID=forum_discussion
+      - SOKETI_DEFAULT_APP_KEY=forum_discussion_key
+      - SOKETI_DEFAULT_APP_SECRET=forum_discussion_secret
 
   # ─────────────────────────────────────────────
   # Prometheus
   # ─────────────────────────────────────────────
   prometheus:
     image: prom/prometheus:latest
-    container_name: forum_prometheus
+    container_name: forum_discussion_prometheus
     restart: unless-stopped
     ports:
       - "9090:9090"
@@ -233,7 +248,7 @@ services:
   # ─────────────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
-    container_name: forum_grafana
+    container_name: forum_discussion_grafana
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -249,14 +264,14 @@ services:
   # ─────────────────────────────────────────────
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: forum_phpmyadmin
+    container_name: forum_discussion_phpmyadmin
     restart: unless-stopped
     ports:
       - "8081:80"
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: forum
+      PMA_USER: forum_discussion
       PMA_PASSWORD: secret
     depends_on:
       mysql:

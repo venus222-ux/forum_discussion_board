@@ -31,9 +31,13 @@ export default defineConfig({
     },
   },
 
-  server: {
-    proxy: {
-      "/api": "http://localhost:8000",
+ server: {
+  host: true, // ensures Vite listens on 0.0.0.0 inside the container, not just its own localhost
+  proxy: {
+    "/api": {
+      target: "http://laravel_app:8000",
+      changeOrigin: true,
     },
   },
+},
 });
