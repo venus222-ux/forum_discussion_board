@@ -1,4 +1,4 @@
-# News Aggregator — Laravel + React (Docker)
+# Forum Disscusion Board— Laravel + React (Docker)
 
 Aplicație full-stack rulată complet în Docker.
 
@@ -164,6 +164,3 @@ docker compose exec frontend npm run build
 
 - User: `admin`
 
-```
-
-```
