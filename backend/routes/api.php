@@ -18,6 +18,8 @@ Broadcast::routes([
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/refresh', [AuthController::class, 'refresh']); // ← mutat aici
+
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/users/most-active', [UserController::class, 'mostActive']);
@@ -43,7 +45,6 @@ Route::middleware('auth.jwt')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::delete('/profile', [AuthController::class, 'destroyProfile']);
-    Route::post('/refresh', [AuthController::class, 'refresh']);
 
     // Comments
     Route::post('/threads/{threadId}/comments', [CommentController::class, 'store']);

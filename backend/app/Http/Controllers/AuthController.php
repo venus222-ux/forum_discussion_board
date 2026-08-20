@@ -2,182 +2,221 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 use App\Models\User;
-use App\Notifications\ResetPasswordNotification;
+use App\Services\Auth\AuthService;
+use App\Services\Auth\PasswordResetService;
+use App\Services\Auth\ProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
-{
-    $data = $request->validate([
-        'name' => 'required',
-        'email' => 'required|email|unique:users',
-        'password' => 'required|min:6|confirmed',
-        'role' => 'required|in:user,moderator',
-    ]);
+    public function __construct(
+        private AuthService $authService,
+        private ProfileService $profileService,
+        private PasswordResetService $passwordResetService
+    ) {}
 
-    $user = User::create([
-        'name' => $data['name'],
-        'email' => $data['email'],
-        'password' => bcrypt($data['password']),
-    ]);
+    // ================= COOKIE HELPERS =================
 
-    $user->assignRole($data['role']);
-
-    $token = auth('api')->login($user);
-
-    return response()->json(['token' => $token]);
-}
-
-public function login(Request $request)
-{
-    $credentials = $request->only('email', 'password');
-
-    if (! $token = Auth::guard('api')->attempt($credentials)) {
-        return response()->json(['error' => 'Unauthorized'], 401);
+    protected function refreshCookie(string $token)
+    {
+        return cookie(
+            'refresh_token',
+            $token,
+            (int) config('jwt.refresh_ttl'), // minute
+            '/',
+            null,
+            false, // secure — pune true în producție (HTTPS)
+            true,  // httpOnly
+            false,
+            'lax'
+        );
     }
 
-    $user = Auth::guard('api')->user();
+    protected function clearRefreshCookie()
+    {
+        return cookie('refresh_token', '', -1);
+    }
 
-    Cache::put("user-is-online-{$user->id}", true, now()->addMinutes(5));
+    // ================= REGISTER =================
 
-    return response()->json([
-        'token' => $token,
-        'token_type' => 'bearer',
-        'expires_in' => auth('api')->factory()->getTTL() * 60,
-        'user' => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->getRoleNames()->first(),
-        ],
-    ]);
-}
+    public function register(RegisterRequest $request)
+    {
+        $user = $this->authService->createUser($request->dto());
 
-public function refresh()
-{
-    $newToken = auth('api')->refresh();
-    $user = auth('api')->user();
+        $accessToken = $this->authService->makeAccessToken($user);
+        $refreshToken = $this->authService->makeRefreshToken($user);
 
-    return response()->json([
-        'token' => $newToken,
-        'token_type' => 'bearer',
-        'expires_in' => auth('api')->factory()->getTTL() * 60,
-        'user' => [
-            'id' => $user->id,
-            'name' => $user->name,
-            'email' => $user->email,
-            'role' => $user->getRoleNames()->first(),
-        ],
-    ]);
-}
+        $this->authService->storeRefreshToken($user, $refreshToken);
 
-public function me()
-{
-    return response()->json([
-        'id' => auth()->id(),
-        'name' => auth()->user()->name,
-        'email' => auth()->user()->email,
-        'role' => auth()->user()->getRoleNames()->first(),
-    ]);
-}
-    // --- LOGOUT ---
+        return response()->json([
+            'token' => $accessToken,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(),
+            ],
+        ])->cookie($this->refreshCookie($refreshToken));
+    }
+
+    // ================= LOGIN =================
+
+    public function login(LoginRequest $request)
+    {
+        $user = $this->authService->attemptLogin($request->dto());
+
+        if (! $user) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
+        }
+
+        $this->authService->markOnline($user);
+
+        $accessToken = $this->authService->makeAccessToken($user);
+        $refreshToken = $this->authService->makeRefreshToken($user);
+
+        $this->authService->storeRefreshToken($user, $refreshToken);
+
+        return response()->json([
+            'token' => $accessToken,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->getRoleNames()->first(),
+            ],
+        ])->cookie($this->refreshCookie($refreshToken));
+    }
+
+    // ================= REFRESH =================
+
+    public function refresh(Request $request)
+    {
+        $refreshToken = $request->cookie('refresh_token');
+
+        if (! $refreshToken) {
+            return response()->json(['message' => 'No refresh token'], 401);
+        }
+
+        try {
+            $payload = JWTAuth::setToken($refreshToken)->getPayload();
+
+            if ($payload->get('type') !== 'refresh') {
+                return response()->json(['message' => 'Invalid token type'], 401);
+            }
+
+            $user = User::find($payload->get('sub'));
+
+            if (! $user) {
+                return response()->json(['message' => 'User not found'], 401);
+            }
+
+            $stored = DB::table('refresh_tokens')
+                ->where('token_hash', hash('sha256', $refreshToken))
+                ->first();
+
+            if (! $stored || $stored->revoked) {
+                $this->authService->revokeUserTokens($user);
+
+                return response()->json(['message' => 'Token reuse detected'], 401);
+            }
+
+            if (now()->greaterThan($stored->expires_at)) {
+                return response()->json(['message' => 'Token expired'], 401);
+            }
+
+            DB::table('refresh_tokens')
+                ->where('id', $stored->id)
+                ->update(['revoked' => true]);
+
+            $newRefreshToken = $this->authService->makeRefreshToken($user);
+            $this->authService->storeRefreshToken($user, $newRefreshToken);
+
+            $accessToken = $this->authService->makeAccessToken($user);
+
+            return response()->json([
+                'token' => $accessToken,
+                'token_type' => 'bearer',
+                'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->getRoleNames()->first(),
+                ],
+            ])->cookie($this->refreshCookie($newRefreshToken));
+
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Invalid refresh token'], 401);
+        }
+    }
+
+    // ================= LOGOUT =================
+
     public function logout()
     {
         $user = Auth::guard('api')->user();
-        Cache::forget("user-is-online-{$user->id}");
-        Auth::guard('api')->logout();
 
-        return response()->json(['message' => 'Successfully logged out']);
+        if ($user) {
+            $this->authService->revokeUserTokens($user);
+            $this->authService->logout($user);
+        }
+
+        return response()
+            ->json(['message' => 'Logged out'])
+            ->cookie($this->clearRefreshCookie());
     }
 
-    // --- PROFILE ---
-    public function profile()
+    // ================= ME =================
+
+    public function me()
     {
-        $user = auth()->user();
+        $user = Auth::guard('api')->user();
 
         return response()->json([
+            'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'created_at' => $user->created_at,
+            'role' => $user->getRoleNames()->first(),
         ]);
     }
 
-    public function updateProfile(Request $request)
+    // ================= PROFILE / PASSWORD (neschimbate) =================
+
+    public function profile()
     {
-        $user = auth()->user();
-        $request->validate([
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'password' => 'nullable|min:6|confirmed',
-        ]);
+        return response()->json($this->profileService->profile());
+    }
 
-        $user->email = $request->email;
-        if ($request->filled('password')) {
-            $user->password = bcrypt($request->password);
-        }
-        $user->save();
-
-        return response()->json(['message' => 'Profile updated successfully']);
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        return response()->json($this->profileService->update($request->dto()));
     }
 
     public function destroyProfile()
     {
-        $user = auth()->user();
-        $user->delete();
-
-        return response()->json(['message' => 'Account deleted successfully']);
+        return response()->json($this->profileService->destroy());
     }
 
-    // --- FORGOT PASSWORD ---
-    public function forgotPassword(Request $request)
+    public function forgotPassword(ForgotPasswordRequest $request)
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
-
-        $token = Str::random(64);
-        DB::table('password_resets')->updateOrInsert(
-            ['email' => $request->email],
-            ['token' => $token, 'created_at' => now()]
-        );
-
-        $user = User::where('email', $request->email)->first();
-        $user->notify(new ResetPasswordNotification($token));
-
-        return response()->json(['message' => 'Password reset link sent to your email']);
+        return response()->json($this->passwordResetService->forgotPassword($request->email));
     }
 
-    // --- RESET PASSWORD ---
-    public function resetPassword(Request $request)
+    public function resetPassword(ResetPasswordRequest $request)
     {
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-            'token' => 'required',
-            'password' => 'required|min:6|confirmed',
-        ]);
-
-        $reset = DB::table('password_resets')
-            ->where('email', $request->email)
-            ->where('token', $request->token)
-            ->first();
-
-        if (! $reset || now()->diffInMinutes($reset->created_at) > 60) {
-            return response()->json(['message' => 'Invalid or expired token'], 400);
-        }
-
-        $user = User::where('email', $request->email)->first();
-        $user->password = bcrypt($request->password);
-        $user->save();
-
-        DB::table('password_resets')->where('email', $request->email)->delete();
-
-        return response()->json(['message' => 'Password has been reset successfully']);
+        return response()->json($this->passwordResetService->resetPassword($request->dto()));
     }
-
-
-
-  
 }

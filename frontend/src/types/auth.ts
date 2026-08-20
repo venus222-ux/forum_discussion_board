@@ -6,11 +6,22 @@ export interface LoginRequest {
   password: string;
 }
 
+export type FailedQueueItem = {
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+};
+
+
 export interface LoginResponse {
   token: string;
-  user: User;
   token_type?: string;
   expires_in?: number;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: "candidate" | "employer" | "admin";
+  };
 }
 
 export interface RegisterRequest {
